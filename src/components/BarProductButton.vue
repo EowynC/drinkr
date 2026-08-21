@@ -1,5 +1,16 @@
+<style>
+    .bar-item-button {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1rem;
+    }
+</style>
+
 <template>
-    <button @click="emit('sold')">
+    <button class="bar-item-button" @click="emit('sold')">
         {{ name }}
     </button>
 </template>

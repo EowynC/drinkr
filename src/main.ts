@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import './style.css'
 import App from './App.vue'
+import router from './router.ts'
 import { seedDatabase } from './database/seed.ts'
 
 async function startApp() {
@@ -10,7 +11,8 @@ async function startApp() {
     const app = createApp(App)
 
     app.use(createPinia())
-    app.mount('#app')
+    app.use(router)
+    app.mount('#app')   
 }
 
 startApp()
