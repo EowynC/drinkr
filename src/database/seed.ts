@@ -66,5 +66,20 @@ export async function seedDatabase() {
             name: 'Gin & Tonic',
             categoryId: 3
         },
+        {
+            id: 6,
+            name: 'Jupiler',
+            categoryId: 2
+        },
+        {
+            id: 7,
+            name: 'La Chouffe',
+            categoryId: 2
+        },
+        {
+            id: 8,
+            name: 'Virgin Mojito',
+            categoryId: 4
+        },
     ])
 }

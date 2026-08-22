@@ -9,7 +9,7 @@
         width: 100%;
         display: flex;
         flex-flow: row wrap;
-        justify-content: space-around;
+        justify-content: start;
 
     }
 </style>
