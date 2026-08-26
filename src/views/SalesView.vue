@@ -41,6 +41,7 @@ const groupedSales = computed(() => {
         key: string
         label: string
         categories: Map<string, {
+            id: number
             name: string
             products: Map<string, { name: string; quantity: number }>
         }>
@@ -61,11 +62,12 @@ const groupedSales = computed(() => {
 
         const product = products.value.find(item => item.id === sale.productId)
         const category = categories.value.find(item => item.id === product?.categoryId)
+        const categoryId = category?.id ?? Number.MAX_SAFE_INTEGER
         const categoryName = category?.name ?? 'Unknown category'
         let categorySales = day.categories.get(categoryName)
 
         if (!categorySales) {
-            categorySales = { name: categoryName, products: new Map() }
+            categorySales = { id: categoryId, name: categoryName, products: new Map() }
             day.categories.set(categoryName, categorySales)
         }
 
@@ -86,10 +88,12 @@ const groupedSales = computed(() => {
         .sort((first, second) => second.key.localeCompare(first.key))
         .map(day => ({
             ...day,
-            categories: [...day.categories.values()].map(category => ({
-                ...category,
-                products: [...category.products.values()]
-            }))
+            categories: [...day.categories.values()]
+                .sort((first, second) => first.id - second.id)
+                .map(category => ({
+                    ...category,
+                    products: [...category.products.values()]
+                }))
         }))
 })
 
