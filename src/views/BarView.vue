@@ -35,18 +35,27 @@
             </section>
 
         </div>
+
+        <SaleQuantityModal
+            v-if="selectedProduct"
+            :product-name="selectedProduct.name"
+            @cancel="selectedProduct = null"
+            @confirm="confirmSale"
+        />
     </MainLayout>
 </template>
 
 <script setup lang="ts">
 import MainLayout from '../components/layout/MainLayout.vue'
 import BarProductButton from '../components/BarProductButton.vue'
+import SaleQuantityModal from '../components/SaleQuantityModal.vue'
 import { db, type Product, type Sale, type Category } from '../database/database'
 import { onMounted, ref } from 'vue'
 
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
 const sales = ref<Sale[]>([])
+const selectedProduct = ref<Product | null>(null)
 
 onMounted(async () => {
     products.value = await db.products.toArray()
@@ -54,15 +63,22 @@ onMounted(async () => {
     sales.value = await db.sales.toArray()
 })
 
-async function sell(sold: Product) {
+function sell(product: Product) {
+    selectedProduct.value = product
+}
+
+async function confirmSale(quantity: number) {
+    if (!selectedProduct.value) return
+
     const newSale = {
-        productId: sold.id!,
-        quantity: 1,
+        productId: selectedProduct.value.id,
+        quantity,
         timestamp: new Date()
     }
 
     await db.sales.add(newSale)
 
     sales.value = await db.sales.toArray()
+    selectedProduct.value = null
 }
 </script>
