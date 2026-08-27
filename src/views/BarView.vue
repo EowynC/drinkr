@@ -4,8 +4,8 @@
         display: flex;
         flex-flow: row nowrap;
         align-items: flex-start;
-        gap: 1.5rem;
         padding: 1rem;
+        gap: 1rem;
         box-sizing: border-box;
     }
 
@@ -16,9 +16,9 @@
     }
 
     .category {
-        border: 2px solid var(--accent-border);
-        margin: 1rem;
-        padding: 2rem;
+        border: 1px solid var(--accent-border);
+        margin: 0.5rem;
+        padding: 0.5rem;
     }
 
     .product-grid {
@@ -124,9 +124,9 @@
                 </section>
             </div>
 
-            <aside v-if="sessionSales.length > 0" class="sale-sidebar">
+            <aside class="sale-sidebar">
                 <h3>Current sale</h3>
-
+                <p v-if="sessionSales.length < 1">No sales yet</p>
                 <ul class="sale-list">
                     <li v-for="item in sortedSessionSales" :key="item.id">
                         <div class="sale-item-row">

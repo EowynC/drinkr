@@ -1,7 +1,9 @@
 <style>
     .bar-item-button {
-        width: 150px;
-        height: 150px;
+        min-width: 120px;
+        min-height: 120px;
+        width: 8rem;
+        height: 8rem;
         display: flex;
         justify-content: center;
         align-items: center;
