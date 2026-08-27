@@ -34,21 +34,19 @@
     .nav-link:hover {
         text-decoration: underline;
     }
+
+    .active-link {
+        color: var(--accent);
+    }
 </style>
 <template>
     <div class="app-layout">
         <header class="app-header">
             <h2>Bartendr</h2>
             <nav class="app-nav">
-                <RouterLink class="nav-link" to="/bar">
-                    Bar
-                </RouterLink>
-                <RouterLink class="nav-link" to="/inventory">
-                    Inventory
-                </RouterLink>
-                <RouterLink class="nav-link" to="/sales">
-                    Sales
-                </RouterLink>
+                <RouterLink class="nav-link" active-class="active-link" to="/bar">Bar</RouterLink>
+                <RouterLink class="nav-link" active-class="active-link" to="/inventory">Inventory</RouterLink>
+                <RouterLink class="nav-link" active-class="active-link" to="/sales">Sales</RouterLink>
             </nav>
         </header>
 
