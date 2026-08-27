@@ -64,6 +64,9 @@ import { db } from '../../database/database';
 
 async function exportIndexedDB() {
     try {
+        let confirmed = confirm('This is only meant for admins, continue?');
+        if (!confirmed) return;
+        
         const blob = await exportDB(db, { prettyJson: true });
         const url = URL.createObjectURL(blob);
         const file = document.createElement('a');
