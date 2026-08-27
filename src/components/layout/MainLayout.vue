@@ -22,19 +22,28 @@
         align-items: center;
         gap: 1rem;
     }
+
+    .nav-link {
+        text-decoration: none;
+        color: white;
+        font-weight: 500;
+    }
+    .nav-link:hover {
+        text-decoration: underline;
+    }
 </style>
 <template>
     <div class="app-layout">
         <header class="app-header">
-            <h2>Drinkr</h2>
+            <h2>Bartendr</h2>
             <nav class="app-nav">
-                <RouterLink to="/bar">
+                <RouterLink class="nav-link" to="/bar">
                     Bar
                 </RouterLink>
-                <RouterLink to="/inventory">
+                <RouterLink class="nav-link" to="/inventory">
                     Inventory
                 </RouterLink>
-                <RouterLink to="/sales">
+                <RouterLink class="nav-link" to="/sales">
                     Sales
                 </RouterLink>
             </nav>
