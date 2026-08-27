@@ -1,11 +1,15 @@
 <style>
     .bar-item-button {
-        width: 100px;
-        height: 100px;
+        width: 150px;
+        height: 150px;
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 1rem;
+        background-color: var(--accent-bg);
+        border: var(--accent-border);
+        color: var(--accent);
+        font-weight: bold;
     }
 </style>
 

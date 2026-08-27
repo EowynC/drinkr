@@ -6,12 +6,15 @@
     }
 
     .app-header {
+        background-color: var(--accent-bg);
         width: 100%;
+        height: 3rem;
+        padding-left: 1rem;
+        box-sizing: border-box;
         display: flex;
         flex-flow: row;
         align-items: center;
         gap: 2rem;
-        margin: 2rem;
     }
 
     .app-nav {
@@ -20,7 +23,7 @@
         flex-flow: row;
         justify-content: flex-start;
         align-items: center;
-        gap: 1rem;
+        gap: 3rem;
     }
 
     .nav-link {

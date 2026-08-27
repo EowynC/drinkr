@@ -1,8 +1,13 @@
 <style>
-    .categories {
+    .bar-screen {
         width: 100%;
         display: flex;
-        flex-flow: column;
+        flex-flow: row wrap;
+    }
+    .category {
+        border: 2px solid var(--accent-border);
+        margin: 1rem;
+        padding: 2rem;
     }
 
     .product-grid {
@@ -17,9 +22,8 @@
 <template>
     <MainLayout>
         <div class="bar-screen">
-
             <section v-for="cat in categories" class="category">
-                {{ cat.name }}
+                <h2>{{ cat.name }}</h2>
                 <div class="product-grid">
                     <BarProductButton
                         v-for="item in products.filter(val => val.categoryId == cat.id)"
