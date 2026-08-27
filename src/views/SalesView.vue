@@ -59,10 +59,10 @@
                             <table class="sales-table">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Product</th>
-                                        <th scope="col">Amount sold</th>
-                                        <th scope="col">Price per unit</th>
-                                        <th scope="col">Total</th>
+                                        <th style="width: 25%;" scope="col">Product</th>
+                                        <th style="width: 25%;" scope="col">Amount sold</th>
+                                        <th style="width: 25%;" scope="col">Price per unit</th>
+                                        <th style="width: 25%;" scope="col">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
