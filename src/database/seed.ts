@@ -44,42 +44,50 @@ export async function seedDatabase() {
         {
             id: 1,
             name: 'Coke',
-            categoryId: 1
+            categoryId: 1,
+            price: 3.00
         },
         {
             id: 2,
             name: 'Sprite',
-            categoryId: 1
+            categoryId: 1,
+            price: 3.00
         },
         {
             id: 3,
             name: 'Gin',
-            categoryId: 5
+            categoryId: 5,
+            price: 6.00
         },
         {
             id: 4,
             name: 'Tonic',
-            categoryId: 1
+            categoryId: 1,
+            price: 3.00
         },
         {
             id: 5,
             name: 'Gin & Tonic',
-            categoryId: 3
+            categoryId: 3,
+            price: 9.00
         },
         {
             id: 6,
             name: 'Jupiler',
-            categoryId: 2
+            categoryId: 2,
+            price: 3.00
         },
         {
             id: 7,
             name: 'La Chouffe',
-            categoryId: 2
+            categoryId: 2,
+            price: 6.00
         },
         {
             id: 8,
             name: 'Virgin Mojito',
-            categoryId: 4
+            categoryId: 4,
+            price: 6.00
         },
     ])
 }

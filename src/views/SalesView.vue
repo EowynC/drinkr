@@ -69,8 +69,8 @@
                                     <tr v-for="product in category.products" :key="product.name">
                                         <td>{{ product.name }}</td>
                                         <td>{{ product.quantity }}</td>
-                                        <td class="empty-value">-</td>
-                                        <td class="empty-value">-</td>
+                                        <td>{{ product.price }}</td>
+                                        <td>{{ (product.price ?? 1) * product.quantity }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -100,7 +100,7 @@ const groupedSales = computed(() => {
         categories: Map<string, {
             id: number
             name: string
-            products: Map<string, { name: string; quantity: number }>
+            products: Map<string, { name: string; quantity: number; price?: number | undefined }>
         }>
     }>()
 
@@ -136,9 +136,10 @@ const groupedSales = computed(() => {
         } else {
             categorySales.products.set(productName, {
                 name: productName,
-                quantity: sale.quantity
-            })
-        }
+                quantity: sale.quantity,
+                price: product?.price
+        })
+    }
     }
 
     return [...days.values()]

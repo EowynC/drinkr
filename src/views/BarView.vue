@@ -29,11 +29,6 @@
                     />
                 </div>
             </section>
-
-            <section class="bar-status">
-                Sold: {{ sales.length }}
-            </section>
-
         </div>
 
         <SaleQuantityModal

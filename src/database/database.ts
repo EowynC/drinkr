@@ -4,6 +4,7 @@ export interface Product {
     id: number
     name: string
     categoryId: number 
+    price: number
 }
 
 export interface Category {
@@ -26,7 +27,7 @@ const db = new Dexie('DrinkrDatabase') as Dexie & {
 }
 
 db.version(1).stores({
-    products: 'id, name, categoryId',
+    products: 'id, name, categoryId, price',
     categories: 'id, name, isAlcoholic',
     sales: '++id, productId, quantity, timestamp'
 })
