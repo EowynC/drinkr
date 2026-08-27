@@ -1,36 +1,93 @@
 <style>
-    .category-wrapper {
-        display: flex;
-        flex-flow: row;
-        justify-content: space-evenly;
-        margin-bottom: 3rem;
+    .sales-screen {
+        width: 100%;
+        text-align: left;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    .sales-category {
+        margin-bottom: 2rem;
+    }
+
+    .sales-category h3 {
+        margin: 0 0 0.75rem;
+        color: var(--text-h);
+    }
+
+    .sales-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .sales-table th,
+    .sales-table td {
+        padding: 0.7rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sales-table th {
+        color: var(--text);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .sales-table th:not(:first-child),
+    .sales-table td:not(:first-child) {
+        text-align: right;
+    }
+
+    .empty-value {
+        color: var(--text);
+        opacity: 0.7;
     }
 </style>
 
 <template>
     <MainLayout>
-        <h2>Sales</h2>
+        <div class="sales-screen">
+            <h2>Sales</h2>
 
-        <p v-if="groupedSales.length === 0">No sales yet.</p>
+            <p v-if="groupedSales.length === 0">No sales yet.</p>
 
-        <section v-for="day in groupedSales" :key="day.key">
-            <h3>{{ day.label }}</h3>
-            <div class="category-wrapper">
-                <div v-for="category in day.categories" :key="category.name">
-                    <h4>{{ category.name }}</h4>
-                    <p v-for="product in category.products" :key="product.name">
-                        {{ product.name }}: {{ product.quantity }}
-                    </p>
-                </div>
-            </div>
-        </section>
+            <template v-else>
+                <Tabs>
+                    <Tab v-for="day in groupedSales" :key="day.key" :title="day.label">
+                        <div v-for="category in day.categories" :key="category.name" class="sales-category">
+                            <h3>{{ category.name }}</h3>
+                            <table class="sales-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Product</th>
+                                        <th scope="col">Amount sold</th>
+                                        <th scope="col">Price per unit</th>
+                                        <th scope="col">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="product in category.products" :key="product.name">
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.quantity }}</td>
+                                        <td class="empty-value">-</td>
+                                        <td class="empty-value">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </Tab>
+                </Tabs>
+            </template>
+        </div>
     </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import MainLayout from '../components/layout/MainLayout.vue';
-import { db, type Category, type Product, type Sale } from '../database/database';
+import { computed, onMounted, ref } from 'vue'
+import MainLayout from '../components/layout/MainLayout.vue'
+import Tabs from '../components/Tabs.vue'
+import Tab from '../components/Tab.vue'
+import { db, type Category, type Product, type Sale } from '../database/database'
 
 const sales = ref<Sale[]>([])
 const products = ref<Product[]>([])
