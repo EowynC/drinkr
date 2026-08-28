@@ -26,14 +26,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # https://github.com/orgs/community/discussions/25768#discussioncomment-17203052
+      - name: downcase REPO
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
       - name: Build & push image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ghcr.io/${{ github.repository }}/drinkr:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/drinkr:latest
+            ghcr.io/${{ env.REPO }}/drinkr:${{ github.sha }}
+            ghcr.io/${{ env.REPO }}/drinkr:latest
           labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ env.REPO }}
             org.opencontainers.image.revision=${{ github.sha }}
