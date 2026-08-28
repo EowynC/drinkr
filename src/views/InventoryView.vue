@@ -19,7 +19,10 @@
                         <button type="submit">Add product</button>
                     </form>
                 </div>
-                <p class="product-list">{{ products.length }} products currently available in the bar.</p>
+                <p class="product-list">{{ products.length }} products currently available in the bar:</p>
+                <p class="product-list">
+                    <span v-for="value in products">{{ value.name }}, </span>
+                </p>
             </section>
 
             <section class="inventory-section">
@@ -27,7 +30,7 @@
                     <div><p class="eyebrow">Ingredients and packaged stock</p><h3>On hand</h3></div>
                     <form class="stock-form" @submit.prevent="addStock">
                         <select v-model="stockForm.itemId" aria-label="Ingredient to restock" required>
-                            <option disabled value="">Choose ingredient</option>
+                            <option disabled value="">Choose stock item</option>
                             <option v-for="item in inventoryItems" :key="item.id" :value="item.id">{{ item.name }}</option>
                         </select>
                         <input v-model.number="stockForm.amount" type="number" min="0.01" step="any" aria-label="Amount to add" placeholder="Amount" required>
