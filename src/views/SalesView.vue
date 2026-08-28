@@ -1,49 +1,3 @@
-<style>
-    .sales-screen {
-        width: 100%;
-        text-align: left;
-        padding: 1rem;
-        box-sizing: border-box;
-    }
-
-    .sales-category {
-        margin-bottom: 2rem;
-    }
-
-    .sales-category h3 {
-        margin: 0 0 0.75rem;
-        color: var(--text-h);
-    }
-
-    .sales-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-    }
-
-    .sales-table th,
-    .sales-table td {
-        padding: 0.7rem 0.75rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .sales-table th {
-        color: var(--text);
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .sales-table th:not(:first-child),
-    .sales-table td:not(:first-child) {
-        text-align: right;
-    }
-
-    .empty-value {
-        color: var(--text);
-        opacity: 0.7;
-    }
-</style>
-
 <template>
     <MainLayout>
         <div class="sales-screen">
@@ -172,3 +126,49 @@ function formatDay(date: Date) {
     return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 </script>
+
+<style>
+    .sales-screen {
+        width: 100%;
+        text-align: left;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    .sales-category {
+        margin-bottom: 2rem;
+    }
+
+    .sales-category h3 {
+        margin: 0 0 0.75rem;
+        color: var(--text-h);
+    }
+
+    .sales-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .sales-table th,
+    .sales-table td {
+        padding: 0.7rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sales-table th {
+        color: var(--text);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .sales-table th:not(:first-child),
+    .sales-table td:not(:first-child) {
+        text-align: right;
+    }
+
+    .empty-value {
+        color: var(--text);
+        opacity: 0.7;
+    }
+</style>

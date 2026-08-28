@@ -1,3 +1,136 @@
+<template>
+    <MainLayout>
+        <div class="bar-layout">
+            <div class="product-screen">
+                <section v-for="cat in categories" :key="cat.id" class="category">
+                    <h2>{{ cat.name }}</h2>
+                    <div class="product-grid">
+                        <BarProductButton
+                            v-for="item in products.filter(val => val.categoryId === cat.id)"
+                            :key="item.id"
+                            :name="item.name"
+                            @sold="addToSession(item)"
+                        />
+                    </div>
+                </section>
+            </div>
+
+            <aside class="sale-sidebar">
+                <h3>Current sale</h3>
+                <p v-if="sessionSales.length < 1">No sales yet</p>
+                <ul class="sale-list">
+                    <li v-for="item in sortedSessionSales" :key="item.id">
+                        <div class="sale-item-row">
+                            <button type="button" class="sale-control" aria-label="Decrease quantity" @click="subtractFromSession(item)">
+                                -
+                            </button>
+                            <span class="sale-item-name">{{ item.name }}</span>
+                            <span class="sale-quantity">x{{ item.quantity }}</span>
+                            <button type="button" class="sale-control" aria-label="Increase quantity" @click="addToSession(item)">
+                                +
+                            </button>
+                            <button type="button" class="sale-control sale-delete" aria-label="Delete item" @click="removeFromSession(item.id)">
+                                ×
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+
+                <button type="button" class="confirm-sale-button" @click="confirmSessionSale">
+                    Confirm sale
+                </button>
+            </aside>
+        </div>
+    </MainLayout>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import MainLayout from '../components/layout/MainLayout.vue'
+import BarProductButton from '../components/BarProductButton.vue'
+import { db, recordSales, type Product, type Sale, type Category } from '../database/database'
+
+type SessionSaleItem = {
+    id: number
+    name: string
+    categoryId: number
+    quantity: number
+}
+
+const products = ref<Product[]>([])
+const categories = ref<Category[]>([])
+const sales = ref<Sale[]>([])
+const sessionSales = ref<SessionSaleItem[]>([])
+
+const sortedSessionSales = computed(() => {
+    return [...sessionSales.value].sort((first, second) => {
+        const firstProduct = products.value.find(item => item.id === first.id)
+        const secondProduct = products.value.find(item => item.id === second.id)
+        const firstCategoryId = firstProduct?.categoryId ?? first.categoryId
+        const secondCategoryId = secondProduct?.categoryId ?? second.categoryId
+
+        if (firstCategoryId !== secondCategoryId) {
+            return firstCategoryId - secondCategoryId
+        }
+
+        return (firstProduct?.name ?? first.name).localeCompare(secondProduct?.name ?? second.name)
+    })
+})
+
+onMounted(async () => {
+    products.value = await db.products.toArray()
+    categories.value = await db.categories.toArray()
+    sales.value = await db.sales.toArray()
+})
+
+function addToSession(product: Product | SessionSaleItem) {
+    const existing = sessionSales.value.find(item => item.id === product.id)
+
+    if (existing) {
+        existing.quantity += 1
+        return
+    }
+
+    sessionSales.value.push({
+        id: product.id,
+        name: product.name,
+        categoryId: product.categoryId,
+        quantity: 1
+    })
+}
+
+function subtractFromSession(product: Product | SessionSaleItem) {
+    const existing = sessionSales.value.find(item => item.id === product.id)
+
+    if (!existing) return
+
+    if (existing.quantity <= 1) {
+        removeFromSession(existing.id)
+        return
+    }
+
+    existing.quantity -= 1
+}
+
+function removeFromSession(productId: number) {
+    sessionSales.value = sessionSales.value.filter(item => item.id !== productId)
+}
+
+async function confirmSessionSale() {
+    if (sessionSales.value.length === 0) return
+
+    try {
+        await recordSales(sessionSales.value.map(item => ({ productId: item.id, quantity: item.quantity })))
+    } catch (error) {
+        alert(error instanceof Error ? error.message : 'Unable to record sale')
+        return
+    }
+
+    sales.value = await db.sales.toArray()
+    sessionSales.value = []
+}
+</script>
+
 <style>
     .bar-layout {
         width: 100%;
@@ -106,139 +239,3 @@
         cursor: pointer;
     }
 </style>
-
-<template>
-    <MainLayout>
-        <div class="bar-layout">
-            <div class="product-screen">
-                <section v-for="cat in categories" :key="cat.id" class="category">
-                    <h2>{{ cat.name }}</h2>
-                    <div class="product-grid">
-                        <BarProductButton
-                            v-for="item in products.filter(val => val.categoryId === cat.id)"
-                            :key="item.id"
-                            :name="item.name"
-                            @sold="addToSession(item)"
-                        />
-                    </div>
-                </section>
-            </div>
-
-            <aside class="sale-sidebar">
-                <h3>Current sale</h3>
-                <p v-if="sessionSales.length < 1">No sales yet</p>
-                <ul class="sale-list">
-                    <li v-for="item in sortedSessionSales" :key="item.id">
-                        <div class="sale-item-row">
-                            <button type="button" class="sale-control" aria-label="Decrease quantity" @click="subtractFromSession(item)">
-                                -
-                            </button>
-                            <span class="sale-item-name">{{ item.name }}</span>
-                            <span class="sale-quantity">x{{ item.quantity }}</span>
-                            <button type="button" class="sale-control" aria-label="Increase quantity" @click="addToSession(item)">
-                                +
-                            </button>
-                            <button type="button" class="sale-control sale-delete" aria-label="Delete item" @click="removeFromSession(item.id)">
-                                ×
-                            </button>
-                        </div>
-                    </li>
-                </ul>
-
-                <button type="button" class="confirm-sale-button" @click="confirmSessionSale">
-                    Confirm sale
-                </button>
-            </aside>
-        </div>
-    </MainLayout>
-</template>
-
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import MainLayout from '../components/layout/MainLayout.vue'
-import BarProductButton from '../components/BarProductButton.vue'
-import { db, type Product, type Sale, type Category } from '../database/database'
-
-type SessionSaleItem = {
-    id: number
-    name: string
-    categoryId: number
-    quantity: number
-}
-
-const products = ref<Product[]>([])
-const categories = ref<Category[]>([])
-const sales = ref<Sale[]>([])
-const sessionSales = ref<SessionSaleItem[]>([])
-
-const sortedSessionSales = computed(() => {
-    return [...sessionSales.value].sort((first, second) => {
-        const firstProduct = products.value.find(item => item.id === first.id)
-        const secondProduct = products.value.find(item => item.id === second.id)
-        const firstCategoryId = firstProduct?.categoryId ?? first.categoryId
-        const secondCategoryId = secondProduct?.categoryId ?? second.categoryId
-
-        if (firstCategoryId !== secondCategoryId) {
-            return firstCategoryId - secondCategoryId
-        }
-
-        return (firstProduct?.name ?? first.name).localeCompare(secondProduct?.name ?? second.name)
-    })
-})
-
-onMounted(async () => {
-    products.value = await db.products.toArray()
-    categories.value = await db.categories.toArray()
-    sales.value = await db.sales.toArray()
-})
-
-function addToSession(product: Product | SessionSaleItem) {
-    const existing = sessionSales.value.find(item => item.id === product.id)
-
-    if (existing) {
-        existing.quantity += 1
-        return
-    }
-
-    sessionSales.value.push({
-        id: product.id,
-        name: product.name,
-        categoryId: product.categoryId,
-        quantity: 1
-    })
-}
-
-function subtractFromSession(product: Product | SessionSaleItem) {
-    const existing = sessionSales.value.find(item => item.id === product.id)
-
-    if (!existing) return
-
-    if (existing.quantity <= 1) {
-        removeFromSession(existing.id)
-        return
-    }
-
-    existing.quantity -= 1
-}
-
-function removeFromSession(productId: number) {
-    sessionSales.value = sessionSales.value.filter(item => item.id !== productId)
-}
-
-async function confirmSessionSale() {
-    if (sessionSales.value.length === 0) return
-
-    await Promise.all(
-        sessionSales.value.map(item =>
-            db.sales.add({
-                productId: item.id,
-                quantity: item.quantity,
-                timestamp: new Date()
-            })
-        )
-    )
-
-    sales.value = await db.sales.toArray()
-    sessionSales.value = []
-}
-</script>
