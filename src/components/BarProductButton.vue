@@ -13,10 +13,16 @@
         border: var(--accent-border);
         color: var(--accent);
         font-weight: bold;
+        gap: 0.2rem;
     }
 
     .bar-item-cost {
         font-size: 0.8rem;
+    }
+
+    .bar-item-snips {
+        font-size: 0.72rem;
+        opacity: 0.85;
     }
 </style>
 
@@ -24,14 +30,24 @@
     <button class="bar-item-button" @click="emit('sold')">
         <span>{{ name }}</span>
         <span class="bar-item-cost">{{ formatCurrency(cost) }}</span>
+        <span class="bar-item-snips">{{ snipLabel }}</span>
     </button>
 </template>
 
 <script setup lang="ts">
-    defineProps<{
+    import { computed } from 'vue'
+
+    const props = defineProps<{
         name:  string
         cost?: number
     }>()
+
+    const SNIP_BASE_PRICE = 3
+
+    const snipLabel = computed(() => {
+        const snipCount = Math.max(1, Math.round((props.cost ?? 0) / SNIP_BASE_PRICE))
+        return `${snipCount} ${snipCount === 1 ? 'snip' : 'snips'}`
+    })
 
     const emit = defineEmits<{
         sold: []
@@ -42,5 +58,5 @@
             style: 'currency',
             currency: 'EUR'
         }).format(value ?? 0)
-}
+    }
 </script>

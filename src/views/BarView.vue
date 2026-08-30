@@ -19,6 +19,10 @@
             <aside class="sale-sidebar">
                 <h3>Current sale</h3>
                 <p v-if="sessionSales.length < 1">No sales yet</p>
+                <div class="sale-snip-meta">
+                    <span>1 snip</span>
+                    <strong>{{ formatCurrency(SNIP_BASE_PRICE) }}</strong>
+                </div>
                 <ul class="sale-list">
                     <li v-for="item in sortedSessionSales" :key="item.id">
                         <div class="sale-item-row">
@@ -38,7 +42,10 @@
                 </ul>
                 <div v-if="sessionSales.length > 0" class="sale-total">
                     <span>Total</span>
-                    <strong>{{ formatCurrency(totalSessionPrice) }}</strong>
+                    <div class="sale-total-amounts">
+                        <strong>{{ formatCurrency(totalSessionPrice) }}</strong>
+                        <small>{{ formatSnipCount(totalSessionPrice) }}</small>
+                    </div>
                 </div>
                 <button type="button" class="confirm-sale-button" @click="confirmSessionSale">
                     Confirm sale
@@ -60,6 +67,8 @@ type SessionSaleItem = {
     categoryId: number
     quantity: number
 }
+
+const SNIP_BASE_PRICE = 3
 
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
@@ -94,6 +103,11 @@ function formatCurrency(value: number) {
         style: 'currency',
         currency: 'EUR'
     }).format(value)
+}
+
+function formatSnipCount(value: number) {
+    const snips = Math.max(1, Math.round(value / SNIP_BASE_PRICE))
+    return `${snips} ${snips === 1 ? 'snip' : 'snips'}`
 }
 
 onMounted(async () => {
@@ -246,6 +260,20 @@ async function confirmSessionSale() {
         color: var(--negative-feedback);
     }
 
+    .sale-snip-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin: 0 0 1rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--border);
+        background: var(--code-bg);
+        border-radius: 6px;
+        color: var(--text-h);
+        font-size: 0.92rem;
+    }
+
     .sale-total {
         display: flex;
         justify-content: space-between;
@@ -258,6 +286,19 @@ async function confirmSessionSale() {
         border-radius: 6px;
         color: var(--text-h);
         font-weight: 600;
+    }
+
+    .sale-total-amounts {
+        display: flex;
+        flex-flow: column;
+        align-items: flex-end;
+        gap: 0.15rem;
+    }
+
+    .sale-total-amounts small {
+        font-size: 0.72rem;
+        opacity: 0.8;
+        font-weight: 500;
     }
 
     .confirm-sale-button {
