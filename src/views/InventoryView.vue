@@ -190,7 +190,7 @@ select, input {
     background: var(--bg); 
 }
 button { 
-    color: #fff; 
+    color: var(--text-button); 
     background: var(--accent); 
     border-color: var(--accent); 
     cursor: pointer; 

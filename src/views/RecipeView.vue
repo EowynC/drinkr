@@ -220,7 +220,7 @@ function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
     cursor: pointer;
 }
 .new-recipe-button, .primary-button, .confirm-button {
-    color: #fff;
+    color: var(--text-button);
     background: var(--accent);
     border: 1px solid var(--accent);
     font-weight: 600;

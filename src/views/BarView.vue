@@ -231,7 +231,7 @@ async function confirmSessionSale() {
         width: 100%;
         border: none;
         background: var(--accent);
-        color: #fff;
+        color: var(--text-button);
         border-radius: 6px;
         padding: 0.9rem 1rem;
         font: inherit;

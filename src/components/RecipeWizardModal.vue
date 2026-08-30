@@ -264,7 +264,7 @@ select, input {
 }
 .confirm-button {
     flex: 1.5;
-    color: #fff;
+    color: var(--text-button);
     background: var(--accent);
     border: 1px solid var(--accent);
     font-weight: 600;
