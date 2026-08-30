@@ -31,75 +31,24 @@
             </section>
         </div>
 
-        <div v-if="showRecipeWizard" class="modal-backdrop" role="presentation" @click.self="closeRecipeWizard">
-            <section class="recipe-wizard" role="dialog" aria-modal="true" aria-labelledby="recipe-wizard-title">
-                <div class="wizard-header">
-                    <div>
-                        <p v-if="wizard.mode == 'new'" class="modal-kicker">New recipe</p>
-                        <h2 v-if="wizard.mode == 'new'" id="recipe-wizard-title">Build a drink recipe</h2>
-                        <p v-if="wizard.mode == 'existing'" class="modal-kicker">Edit recipe</p>
-                        <h2 v-if="wizard.mode == 'existing'" id="recipe-wizard-title">Change a drink recipe</h2>
-                    </div>
-                    <button type="button" class="icon-button" @click="closeRecipeWizard" aria-label="Close recipe wizard">×</button>
-                </div>
-
-                <div v-if="wizard.mode === 'existing'" class="field-group">
-                    <label class="field-label" for="selected-product">Menu item</label>
-                    <select id="selected-product" v-model="wizard.productId" aria-label="Choose menu item" required @change="onMenuItemChange">
-                        <option disabled value="">Choose menu item</option>
-                        <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
-                    </select>
-                </div>
-
-                <div v-else class="product-form-grid">
-                    <div class="field-group">
-                        <label class="field-label" for="new-product-name">Menu item name</label>
-                        <input id="new-product-name" v-model.trim="wizard.productName" type="text" aria-label="Menu item name" placeholder="e.g. Espresso Martini" required>
-                    </div>
-                    <div class="field-group">
-                        <label class="field-label" for="new-product-category">Category</label>
-                        <select id="new-product-category" v-model="wizard.categoryId" aria-label="Menu item category" required>
-                            <option disabled value="">Choose category</option>
-                            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label class="field-label" for="new-product-price">Price</label>
-                        <input id="new-product-price" v-model.number="wizard.price" type="number" min="0" step="0.01" aria-label="Menu item price" placeholder="Price" required>
-                    </div>
-                </div>
-
-                <div class="ingredient-builder">
-                    <div class="ingredient-header">
-                        <h3>Ingredients</h3>
-                        <button type="button" class="secondary-button" @click="addIngredientRow">Add ingredient</button>
-                    </div>
-
-                    <div v-for="(row, index) in wizard.ingredientRows" :key="`row-${index}`" class="ingredient-row">
-                        <select v-model="row.inventoryItemId" aria-label="Recipe ingredient" required>
-                            <option disabled value="">Choose ingredient</option>
-                            <option v-for="item in inventoryItems" :key="item.id" :value="item.id">{{ item.name }} ({{ item.unit }})</option>
-                        </select>
-                        <input v-model.number="row.quantity" type="number" min="0.01" step="any" aria-label="Ingredient quantity" placeholder="Qty" required>
-                        <button type="button" class="remove-row-button" @click="removeIngredientRow(index)" aria-label="Remove ingredient">Remove</button>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="cancel-button" @click="closeRecipeWizard">Cancel</button>
-                    <button type="button" class="confirm-button" :disabled="!canSaveRecipe" @click="saveRecipe">Save recipe</button>
-                </div>
-            </section>
-        </div>
+        <RecipeWizardModal
+            :visible="showRecipeWizard"
+            :model-value="wizard"
+            :products="products"
+            :categories="categories"
+            :inventory-items="inventoryItems"
+            @close="closeRecipeWizard"
+            @product-change="onMenuItemChange"
+            @save="saveRecipe"
+        />
     </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import MainLayout from '../components/layout/MainLayout.vue'
+import RecipeWizardModal, { type RecipeWizardState } from '../components/RecipeWizardModal.vue'
 import { db, type Category, type InventoryItem, type Product, type RecipeLine } from '../database/database'
-
-type WizardMode = 'existing' | 'new'
 
 const inventoryItems = ref<InventoryItem[]>([])
 const products = ref<Product[]>([])
@@ -107,30 +56,19 @@ const categories = ref<Category[]>([])
 const recipeLines = ref<RecipeLine[]>([])
 const showRecipeWizard = ref(false)
 
-const wizard = reactive({
-    mode: 'existing' as WizardMode,
-    productId: '' as number | '',
+const wizard = reactive<RecipeWizardState>({
+    mode: 'existing',
+    productId: '',
     productName: '',
-    categoryId: '' as number | '',
-    price: null as number | null,
-    ingredientRows: [{ inventoryItemId: '' as number | '', quantity: null as number | null }]
+    categoryId: '',
+    price: null,
+    ingredientRows: [{ inventoryItemId: '', quantity: null }]
 })
 
 const recipes = computed(() => products.value.map(product => ({
     product,
     lines: recipeLines.value.filter(line => line.productId === product.id).map(line => ({ ...line, item: inventoryItems.value.find(item => item.id === line.inventoryItemId)! })).filter(line => line.item)
 })).filter(recipe => recipe.lines.length > 0))
-
-const canSaveRecipe = computed(() => {
-    const hasIngredients = wizard.ingredientRows.some(row => row.inventoryItemId !== '' && row.quantity !== null && row.quantity > 0)
-    if (!hasIngredients) return false
-
-    if (wizard.mode === 'existing') {
-        return wizard.productId !== ''
-    }
-
-    return !!wizard.productName.trim() && wizard.categoryId !== '' && wizard.price !== null && wizard.price >= 0
-})
 
 onMounted(loadInventory)
 
@@ -161,14 +99,16 @@ function openRecipeWizardForItem(productId: number) {
     onMenuItemChange()
 }
 
-function onMenuItemChange() {
-    if (wizard.mode !== 'existing' || wizard.productId === '') {
+function onMenuItemChange(productId: number | '' = wizard.productId) {
+    const targetId = productId === '' ? wizard.productId : productId
+    if (wizard.mode !== 'existing' || targetId === '') {
         return
     }
 
-    const selected = products.value.find(product => product.id === Number(wizard.productId))
+    wizard.productId = targetId
+    const selected = products.value.find(product => product.id === Number(targetId))
     const rows = recipeLines.value
-        .filter(line => line.productId === Number(wizard.productId))
+        .filter(line => line.productId === Number(targetId))
         .map(line => ({
             inventoryItemId: line.inventoryItemId,
             quantity: line.quantity
@@ -189,21 +129,8 @@ function closeRecipeWizard() {
     wizard.ingredientRows = [{ inventoryItemId: '', quantity: null }]
 }
 
-function addIngredientRow() {
-    wizard.ingredientRows.push({ inventoryItemId: '', quantity: null })
-}
-
-function removeIngredientRow(index: number) {
-    if (wizard.ingredientRows.length === 1) {
-        wizard.ingredientRows[0] = { inventoryItemId: '', quantity: null }
-        return
-    }
-
-    wizard.ingredientRows.splice(index, 1)
-}
-
-async function saveRecipe() {
-    if (!canSaveRecipe.value) return
+async function saveRecipe(payload: RecipeWizardState) {
+    Object.assign(wizard, payload)
 
     const validIngredients = wizard.ingredientRows.filter(row => row.inventoryItemId !== '' && row.quantity !== null && row.quantity > 0)
     if (validIngredients.length === 0) return
