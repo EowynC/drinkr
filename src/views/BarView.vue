@@ -9,6 +9,7 @@
                             v-for="item in products.filter(val => val.categoryId === cat.id)"
                             :key="item.id"
                             :name="item.name"
+                            :cost="item.price"
                             @sold="addToSession(item)"
                         />
                     </div>
@@ -35,7 +36,10 @@
                         </div>
                     </li>
                 </ul>
-
+                <div v-if="sessionSales.length > 0" class="sale-total">
+                    <span>Total</span>
+                    <strong>{{ formatCurrency(totalSessionPrice) }}</strong>
+                </div>
                 <button type="button" class="confirm-sale-button" @click="confirmSessionSale">
                     Confirm sale
                 </button>
@@ -76,6 +80,21 @@ const sortedSessionSales = computed(() => {
         return (firstProduct?.name ?? first.name).localeCompare(secondProduct?.name ?? second.name)
     })
 })
+
+const totalSessionPrice = computed(() => {
+    return sessionSales.value.reduce((total, item) => {
+        const product = products.value.find(productItem => productItem.id === item.id)
+        const unitPrice = product?.price ?? 0
+        return total + unitPrice * item.quantity
+    }, 0)
+})
+
+function formatCurrency(value: number) {
+    return new Intl.NumberFormat('en-IE', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(value)
+}
 
 onMounted(async () => {
     products.value = await db.products.toArray()
@@ -162,7 +181,7 @@ async function confirmSessionSale() {
     }
 
     .sale-sidebar {
-        width: 320px;
+        width: 350px;
         background: var(--bg);
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -225,6 +244,20 @@ async function confirmSessionSale() {
     .sale-delete {
         padding: 0 0.5rem;
         color: var(--negative-feedback);
+    }
+
+    .sale-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin: 0 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid var(--border);
+        background: var(--code-bg);
+        border-radius: 6px;
+        color: var(--text-h);
+        font-weight: 600;
     }
 
     .confirm-sale-button {

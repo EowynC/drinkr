@@ -5,6 +5,7 @@
         width: 8rem;
         height: 8rem;
         display: flex;
+        flex-flow: column;
         justify-content: center;
         align-items: center;
         margin: 1rem;
@@ -13,20 +14,33 @@
         color: var(--accent);
         font-weight: bold;
     }
+
+    .bar-item-cost {
+        font-size: 0.8rem;
+    }
 </style>
 
 <template>
     <button class="bar-item-button" @click="emit('sold')">
-        {{ name }}
+        <span>{{ name }}</span>
+        <span class="bar-item-cost">{{ formatCurrency(cost) }}</span>
     </button>
 </template>
 
 <script setup lang="ts">
     defineProps<{
         name:  string
+        cost?: number
     }>()
 
     const emit = defineEmits<{
         sold: []
     }>()
+
+    function formatCurrency(value: number | undefined) {
+        return new Intl.NumberFormat('en-GB', {
+            style: 'currency',
+            currency: 'EUR'
+        }).format(value ?? 0)
+}
 </script>
