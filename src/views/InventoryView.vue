@@ -58,56 +58,22 @@
                     </article>
                 </div>
             </section>
-
-            <section class="inventory-section recipe-section">
-                <div class="section-heading">
-                    <div><p class="eyebrow">What a sale consumes</p><h3>Recipes</h3></div>
-                    <form class="recipe-form" @submit.prevent="addRecipeLine">
-                        <select v-model="recipeForm.productId" aria-label="Product recipe" required>
-                            <option disabled value="">Choose product</option>
-                            <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
-                        </select>
-                        <select v-model="recipeForm.inventoryItemId" aria-label="Recipe ingredient" required>
-                            <option disabled value="">Choose ingredient</option>
-                            <option v-for="item in inventoryItems" :key="item.id" :value="item.id">{{ item.name }} ({{ item.unit }})</option>
-                        </select>
-                        <input v-model.number="recipeForm.quantity" type="number" min="0.01" step="any" aria-label="Recipe quantity" placeholder="Qty" required>
-                        <button type="submit">Add ingredient</button>
-                    </form>
-                </div>
-                <p v-if="recipes.length === 0" class="empty-state">No recipes yet. Add an ingredient above to connect stock to a sale.</p>
-                <div v-else class="recipe-list">
-                    <article v-for="recipe in recipes" :key="recipe.product.id" class="recipe-card">
-                        <div><h4>{{ recipe.product.name }}</h4><p>&nbsp;{{ recipe.lines.length }} ingredient{{ recipe.lines.length === 1 ? '' : 's' }} per sale</p></div>
-                        <ul>
-                            <li v-for="line in recipe.lines" :key="line.id"><span>{{ line.item.name }}</span><strong>{{ formatQuantity(line.quantity, line.item.unit) }}</strong><button type="button" class="remove-button" @click="removeRecipeLine(line.id)">Remove</button></li>
-                        </ul>
-                    </article>
-                </div>
-            </section>
         </div>
     </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import MainLayout from '../components/layout/MainLayout.vue'
-import { db, type Category, type InventoryItem, type InventoryUnit, type Product, type RecipeLine } from '../database/database'
+import { db, type Category, type InventoryItem, type InventoryUnit, type Product } from '../database/database'
 
 const inventoryItems = ref<InventoryItem[]>([])
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
-const recipeLines = ref<RecipeLine[]>([])
 const stockForm = reactive<{ itemId: number | ''; amount: number | null }>({ itemId: '', amount: null })
-const recipeForm = reactive<{ productId: number | ''; inventoryItemId: number | ''; quantity: number | null }>({ productId: '', inventoryItemId: '', quantity: null })
 const newItemForm = reactive<{ name: string; unit: InventoryUnit; quantity: number | null }>({ name: '', unit: 'ml', quantity: null })
 const productForm = reactive<{ name: string; categoryId: number | ''; price: number | null }>({ name: '', categoryId: '', price: null })
 const units: InventoryUnit[] = ['ml', 'bottle', 'portion']
-
-const recipes = computed(() => products.value.map(product => ({
-    product,
-    lines: recipeLines.value.filter(line => line.productId === product.id).map(line => ({ ...line, item: inventoryItems.value.find(item => item.id === line.inventoryItemId)! })).filter(line => line.item)
-})).filter(recipe => recipe.lines.length > 0))
 
 onMounted(loadInventory)
 
@@ -115,7 +81,6 @@ async function loadInventory() {
     inventoryItems.value = await db.inventoryItems.toArray()
     products.value = await db.products.toArray()
     categories.value = await db.categories.toArray()
-    recipeLines.value = await db.recipeLines.toArray()
 }
 
 async function addStock() {
@@ -151,19 +116,6 @@ async function changeUnit(item: InventoryItem, event: Event) {
     item.unit = unit
 }
 
-async function addRecipeLine() {
-    if (recipeForm.productId === '' || recipeForm.inventoryItemId === '' || !recipeForm.quantity || recipeForm.quantity <= 0) return
-    await db.recipeLines.add({ productId: recipeForm.productId, inventoryItemId: recipeForm.inventoryItemId, quantity: recipeForm.quantity })
-    recipeForm.quantity = null
-    await loadInventory()
-}
-
-async function removeRecipeLine(lineId: number | undefined) {
-    if (lineId === undefined) return
-    await db.recipeLines.delete(lineId)
-    await loadInventory()
-}
-
 function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
     return `${Number.isInteger(quantity) ? quantity : quantity.toFixed(2)} ${unit}`
 }
@@ -178,7 +130,7 @@ function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
     box-sizing: border-box; 
     text-align: left; 
 }
-.inventory-header, .section-heading, .stock-item-top, .recipe-card > div, .recipe-card li { 
+.inventory-header, .section-heading, .stock-item-top { 
     display: flex; 
     align-items: center; 
 }
@@ -189,7 +141,7 @@ function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
 .inventory-header { 
     margin-bottom: 2.5rem; 
 }
-.inventory-header h2, .section-heading h3, .stock-item h4, .recipe-card h4 { 
+.inventory-header h2, .section-heading h3, .stock-item h4 { 
     margin: 0; 
     color: var(--text-h); 
 }
@@ -204,14 +156,14 @@ function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
     letter-spacing: 0.08em; 
     text-transform: uppercase; 
 }
-.inventory-note, .stock-item p, .recipe-card p {
+.inventory-note, .stock-item p {
      color: var(--text); 
      font-size: 0.85rem; 
 }
 .inventory-section { 
     margin-bottom: 3rem; 
 }
-.stock-form, .new-item-form, .product-form, .recipe-form { 
+.stock-form, .new-item-form, .product-form { 
     display: flex; 
     flex-wrap: wrap; 
     gap: 0.5rem; 
@@ -249,7 +201,7 @@ button {
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); 
     gap: 0.8rem; margin-top: 1rem; 
 }
-.stock-item, .recipe-card { 
+.stock-item { 
     border: 1px solid var(--border); 
     border-radius: 6px; padding: 1rem; 
     background: var(--code-bg); 
@@ -270,48 +222,8 @@ button {
     color: var(--text-h); 
     font-size: 1.5rem; 
 }
-.stock-item p, .recipe-card p { 
+.stock-item p { 
     margin: 0.2rem 0 0; 
-}
-.recipe-list { 
-    display: grid; 
-    gap: 0.8rem; 
-    margin-top: 1rem;
-}
-.recipe-card { 
-    display: grid; 
-    grid-template-columns: minmax(160px, 0.7fr) 1fr; 
-    gap: 1rem; 
-}
-.recipe-card ul { 
-    padding: 0; 
-    margin: 0; 
-    list-style: none; 
-}
-.recipe-card li { 
-    justify-content: flex-end; 
-    gap: 0.8rem; 
-    padding: 0.35rem 0; 
-    border-bottom: 1px solid var(--border); 
-}
-.recipe-card li span { 
-    flex: 1; 
-}
-.recipe-card li strong { 
-    color: var(--text-h); 
-}
-.remove-button { 
-    min-height: auto; 
-    padding: 0.25rem 0.45rem; 
-    color: var(--negative-feedback); 
-    background: transparent; 
-    border-color: transparent; 
-    font-size: 0.8rem; 
-}
-.empty-state { 
-    margin-top: 1rem; 
-    padding: 1rem; 
-    border: 1px dashed var(--border); 
 }
 @media (max-width: 700px) { 
     .inventory-screen { 
@@ -321,16 +233,13 @@ button {
         align-items: flex-start; 
         flex-direction: column; 
     } 
-    .stock-form, .new-item-form, .product-form, .recipe-form { 
+    .stock-form, .new-item-form, .product-form { 
         width: 100%; 
         justify-content: stretch; 
     } 
-    .stock-form > *, .new-item-form > *, .product-form > *, .recipe-form > * { 
+    .stock-form > *, .new-item-form > *, .product-form > * { 
         flex: 1 1 130px; 
         min-width: 0; 
-    } 
-    .recipe-card { 
-        grid-template-columns: 1fr; 
     } 
 }
 </style>

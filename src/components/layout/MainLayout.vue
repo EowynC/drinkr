@@ -5,6 +5,7 @@
             <nav class="app-nav">
                 <RouterLink class="nav-link" active-class="active-link" to="/bar">Bar</RouterLink>
                 <RouterLink class="nav-link" active-class="active-link" to="/inventory">Inventory</RouterLink>
+                <RouterLink class="nav-link" active-class="active-link" to="/recipe">Recipies</RouterLink>
                 <RouterLink class="nav-link" active-class="active-link" to="/sales">Sales</RouterLink>
             </nav>
             <a @click="exportIndexedDB">ExportDB</a>
