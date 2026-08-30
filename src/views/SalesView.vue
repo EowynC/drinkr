@@ -8,6 +8,24 @@
             <template v-else>
                 <Tabs>
                     <Tab v-for="day in groupedSales" :key="day.key" :title="day.label">
+                        <div class="sales-day-summary">
+                            <h3>Daily totals</h3>
+                            <div class="sales-summary-grid">
+                                <div>
+                                    <span>Units sold</span>
+                                    <strong>{{ day.totals.units }}</strong>
+                                </div>
+                                <div>
+                                    <span>Products sold</span>
+                                    <strong>{{ day.totals.products }}</strong>
+                                </div>
+                                <div>
+                                    <span>Total revenue</span>
+                                    <strong>{{ formatCurrency(day.totals.revenue) }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
                         <div v-for="category in day.categories" :key="category.name" class="sales-category">
                             <h3>{{ category.name }}</h3>
                             <table class="sales-table">
@@ -23,8 +41,14 @@
                                     <tr v-for="product in category.products" :key="product.name">
                                         <td>{{ product.name }}</td>
                                         <td>{{ product.quantity }}</td>
-                                        <td>{{ product.price }}</td>
-                                        <td>{{ (product.price ?? 1) * product.quantity }}</td>
+                                        <td>{{ formatCurrency(product.price ?? 0) }}</td>
+                                        <td>{{ formatCurrency((product.price ?? 0) * product.quantity) }}</td>
+                                    </tr>
+                                    <tr class="sales-total-row">
+                                        <td>Total</td>
+                                        <td>{{ category.totals.units }}</td>
+                                        <td>—</td>
+                                        <td>{{ formatCurrency(category.totals.revenue) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -55,7 +79,9 @@ const groupedSales = computed(() => {
             id: number
             name: string
             products: Map<string, { name: string; quantity: number; price?: number | undefined }>
+            totals: { units: number; revenue: number }
         }>
+        totals: { units: number; revenue: number; products: number }
     }>()
 
     for (const sale of sales.value) {
@@ -66,7 +92,8 @@ const groupedSales = computed(() => {
             day = {
                 key: dayKey,
                 label: formatDay(sale.timestamp),
-                categories: new Map()
+                categories: new Map(),
+                totals: { units: 0, revenue: 0, products: 0 }
             }
             days.set(dayKey, day)
         }
@@ -78,12 +105,19 @@ const groupedSales = computed(() => {
         let categorySales = day.categories.get(categoryName)
 
         if (!categorySales) {
-            categorySales = { id: categoryId, name: categoryName, products: new Map() }
+            categorySales = {
+                id: categoryId,
+                name: categoryName,
+                products: new Map(),
+                totals: { units: 0, revenue: 0 }
+            }
             day.categories.set(categoryName, categorySales)
         }
 
         const productName = product?.name ?? 'Unknown product'
         const productSales = categorySales.products.get(productName)
+        const unitPrice = product?.price ?? 0
+        const saleTotal = unitPrice * sale.quantity
 
         if (productSales) {
             productSales.quantity += sale.quantity
@@ -92,8 +126,14 @@ const groupedSales = computed(() => {
                 name: productName,
                 quantity: sale.quantity,
                 price: product?.price
-        })
-    }
+            })
+        }
+
+        categorySales.totals.units += sale.quantity
+        categorySales.totals.revenue += saleTotal
+        day.totals.units += sale.quantity
+        day.totals.revenue += saleTotal
+        day.totals.products += 1
     }
 
     return [...days.values()]
@@ -104,8 +144,20 @@ const groupedSales = computed(() => {
                 .sort((first, second) => first.id - second.id)
                 .map(category => ({
                     ...category,
-                    products: [...category.products.values()]
-                }))
+                    products: [...category.products.values()].map(product => ({
+                        ...product,
+                        total: (product.price ?? 0) * product.quantity
+                    })),
+                    totals: {
+                        units: category.totals.units,
+                        revenue: category.totals.revenue
+                    }
+                })),
+            totals: {
+                units: day.totals.units,
+                revenue: day.totals.revenue,
+                products: day.totals.products
+            }
         }))
 })
 
@@ -125,6 +177,13 @@ function getDayKey(date: Date) {
 function formatDay(date: Date) {
     return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
+
+function formatCurrency(value: number) {
+    return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(value)
+}
 </script>
 
 <style>
@@ -137,6 +196,42 @@ function formatDay(date: Date) {
 
     .sales-category {
         margin-bottom: 2rem;
+    }
+
+    .sales-day-summary {
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .sales-day-summary h3 {
+        margin: 0 0 0.75rem;
+        color: var(--text-h);
+    }
+
+    .sales-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .sales-summary-grid > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .sales-summary-grid span {
+        color: var(--text);
+        opacity: 0.8;
+        font-size: 0.8rem;
+    }
+
+    .sales-summary-grid strong {
+        color: var(--text-h);
+        font-size: 1.05rem;
     }
 
     .sales-category h3 {
@@ -165,6 +260,12 @@ function formatDay(date: Date) {
     .sales-table th:not(:first-child),
     .sales-table td:not(:first-child) {
         text-align: right;
+    }
+
+    .sales-total-row td {
+        font-weight: 700;
+        color: var(--text-h);
+        border-top: 2px solid var(--border);
     }
 
     .empty-value {
