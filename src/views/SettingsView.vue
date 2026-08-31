@@ -54,11 +54,13 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import { exportDB } from 'dexie-export-import'
 import MainLayout from '../components/layout/MainLayout.vue'
 import { db } from '../database/database'
 import { DEFAULT_SETTINGS, type AppSettings, useAppSettings } from '../settings'
 
+const toast = useToast()
 const { settings, saveSettings } = useAppSettings()
 const draft = ref<AppSettings>(cloneSettings(settings.value))
 const isEditingSnipPrice = ref(false)
@@ -95,11 +97,13 @@ function saveChanges() {
 
     saveSettings(draft.value)
     isEditingSnipPrice.value = false
+    toast.success('Settings saved.')
 }
 
 function resetToDefaults() {
     draft.value = cloneSettings(DEFAULT_SETTINGS)
     isEditingSnipPrice.value = false
+    toast.success('Settings reset to defaults.')
 }
 
 async function exportIndexedDB() {
@@ -114,8 +118,10 @@ async function exportIndexedDB() {
         file.download = 'bartendr-export.json'
         file.click()
         URL.revokeObjectURL(url)
+        toast.success('Database export started.')
     } catch (error) {
         console.error('Failed to export database', error)
+        toast.error('Failed to export database.')
     }
 }
 

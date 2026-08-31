@@ -46,10 +46,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import RecipeWizardModal, { type RecipeWizardState } from '../components/RecipeWizardModal.vue'
 import { db, type Category, type InventoryItem, type Product, type RecipeLine } from '../database/database'
 
+const toast = useToast()
 const inventoryItems = ref<InventoryItem[]>([])
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
@@ -133,7 +135,10 @@ async function saveRecipe(payload: RecipeWizardState) {
     Object.assign(wizard, payload)
 
     const validIngredients = wizard.ingredientRows.filter(row => row.inventoryItemId !== '' && row.quantity !== null && row.quantity > 0)
-    if (validIngredients.length === 0) return
+    if (validIngredients.length === 0) {
+        toast.warning('Add at least one valid ingredient to the recipe.')
+        return
+    }
 
     try {
         if (wizard.mode === 'existing' && wizard.productId !== '') {
@@ -162,8 +167,10 @@ async function saveRecipe(payload: RecipeWizardState) {
 
         closeRecipeWizard()
         await loadInventory()
+        toast.success('Recipe saved successfully.')
     } catch (error) {
         console.error('Unable to save recipe', error)
+        toast.error('Unable to save recipe.')
     }
 }
 

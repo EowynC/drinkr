@@ -64,9 +64,11 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import { db, type Category, type InventoryItem, type InventoryUnit, type Product } from '../database/database'
 
+const toast = useToast()
 const inventoryItems = ref<InventoryItem[]>([])
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
@@ -84,36 +86,84 @@ async function loadInventory() {
 }
 
 async function addStock() {
-    if (stockForm.itemId === '' || !stockForm.amount || stockForm.amount <= 0) return
+    if (stockForm.itemId === '' || !stockForm.amount || stockForm.amount <= 0) {
+        toast.warning('Choose a stock item and a valid amount.')
+        return
+    }
+
     const item = inventoryItems.value.find(value => value.id === stockForm.itemId)
-    if (!item) return
-    await db.inventoryItems.update(item.id, { quantity: item.quantity + stockForm.amount })
-    stockForm.amount = null
-    await loadInventory()
+    if (!item) {
+        toast.error('Could not find that stock item.')
+        return
+    }
+
+    try {
+        await db.inventoryItems.update(item.id, { quantity: item.quantity + stockForm.amount })
+        stockForm.amount = null
+        await loadInventory()
+        toast.success(`${item.name} stock updated.`)
+    } catch (error) {
+        console.error('Unable to add stock', error)
+        toast.error('Unable to update stock.')
+    }
 }
 
 async function addInventoryItem() {
-    if (!newItemForm.name || newItemForm.quantity === null || newItemForm.quantity < 0) return
-    await db.inventoryItems.add({ id: Date.now(), name: newItemForm.name, unit: newItemForm.unit, quantity: newItemForm.quantity })
-    newItemForm.name = ''
-    newItemForm.quantity = null
-    await loadInventory()
+    if (!newItemForm.name || newItemForm.quantity === null || newItemForm.quantity < 0) {
+        toast.warning('Enter a valid stock item name and quantity.')
+        return
+    }
+
+    const itemName = newItemForm.name
+
+    try {
+        await db.inventoryItems.add({ id: Date.now(), name: itemName, unit: newItemForm.unit, quantity: newItemForm.quantity })
+        newItemForm.name = ''
+        newItemForm.quantity = null
+        await loadInventory()
+        toast.success(`${itemName} added to inventory.`)
+    } catch (error) {
+        console.error('Unable to add inventory item', error)
+        toast.error('Unable to add stock item.')
+    }
 }
 
 async function addProduct() {
-    if (!productForm.name || productForm.categoryId === '' || productForm.price === null || productForm.price < 0) return
-    await db.products.add({ id: Date.now(), name: productForm.name, categoryId: productForm.categoryId, price: productForm.price })
-    productForm.name = ''
-    productForm.categoryId = ''
-    productForm.price = null
-    await loadInventory()
+    if (!productForm.name || productForm.categoryId === '' || productForm.price === null || productForm.price < 0) {
+        toast.warning('Complete the product fields before saving.')
+        return
+    }
+
+    const productName = productForm.name
+
+    try {
+        await db.products.add({ id: Date.now(), name: productName, categoryId: productForm.categoryId, price: productForm.price })
+        productForm.name = ''
+        productForm.categoryId = ''
+        productForm.price = null
+        await loadInventory()
+        toast.success(`${productName} added to the bar.`)
+    } catch (error) {
+        console.error('Unable to add product', error)
+        toast.error('Unable to add product.')
+    }
 }
 
 async function changeUnit(item: InventoryItem, event: Event) {
     const unit = (event.target as HTMLSelectElement).value as InventoryUnit
-    if (!units.includes(unit)) return
-    await db.inventoryItems.update(item.id, { unit })
-    item.unit = unit
+    if (!units.includes(unit)) {
+        toast.warning('That unit is not available.')
+        return
+    }
+
+    try {
+        await db.inventoryItems.update(item.id, { unit })
+        item.unit = unit
+        toast.success(`${item.name} unit updated.`)
+    } catch (error) {
+        console.error('Unable to update unit', error)
+        toast.error('Unable to update stock unit.')
+    }
 }
 
 function formatQuantity(quantity: number, unit: InventoryItem['unit']) {

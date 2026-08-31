@@ -59,10 +59,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import BarProductButton from '../components/BarProductButton.vue'
 import { db, recordSales, type Product, type Sale, type Category } from '../database/database'
 import { calculateSnipCount, useAppSettings } from '../settings'
+
+const toast = useToast()
 
 type SessionSaleItem = {
     id: number
@@ -153,17 +156,20 @@ function removeFromSession(productId: number) {
 }
 
 async function confirmSessionSale() {
-    if (sessionSales.value.length === 0) return
-
-    try {
-        await recordSales(sessionSales.value.map(item => ({ productId: item.id, quantity: item.quantity })))
-    } catch (error) {
-        alert(error instanceof Error ? error.message : 'Unable to record sale')
+    if (sessionSales.value.length === 0) {
+        toast.warning('Add at least one item before confirming a sale.')
         return
     }
 
-    sales.value = await db.sales.toArray()
-    sessionSales.value = []
+    try {
+        await recordSales(sessionSales.value.map(item => ({ productId: item.id, quantity: item.quantity })))
+        sales.value = await db.sales.toArray()
+        sessionSales.value = []
+        toast.success('Sale recorded successfully.')
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to record sale'
+        toast.error(message)
+    }
 }
 </script>
 
