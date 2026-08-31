@@ -167,7 +167,7 @@ function formatCurrency(value: number) {
     }
 
     .setting-row--value {
-        align-items: flex-start;
+        align-items: center;
         padding: 0.9rem 0.75rem;
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -177,6 +177,7 @@ function formatCurrency(value: number) {
     .setting-label-group {
         display: flex;
         flex-flow: column;
+        justify-content: center;
         gap: 0.25rem;
         flex: 1;
     }
@@ -206,7 +207,10 @@ function formatCurrency(value: number) {
     .setting-actions {
         display: flex;
         align-items: center;
+        justify-content: flex-end;
         gap: 0.5rem;
+        margin-left: auto;
+        min-height: 2.75rem;
     }
 
     .settings-actions {
@@ -231,6 +235,7 @@ function formatCurrency(value: number) {
         background: var(--accent);
         color: var(--text-button);
         flex: 1;
+        min-width: 7rem;
     }
 
     .secondary-button {
