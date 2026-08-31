@@ -9,7 +9,6 @@
                 <RouterLink class="nav-link" active-class="active-link" to="/sales">Sales</RouterLink>
                 <RouterLink class="nav-link" active-class="active-link" to="/settings">Settings</RouterLink>
             </nav>
-            <a @click="exportIndexedDB">ExportDB</a>
         </header>
 
         <main class="app-content">
@@ -18,27 +17,6 @@
     </div>
 </template>
 
-<script setup lang="ts">
-import { exportDB } from 'dexie-export-import';
-import { db } from '../../database/database';
-
-async function exportIndexedDB() {
-    try {
-        let confirmed = confirm('This is only meant for admins, continue?');
-        if (!confirmed) return;
-        
-        const blob = await exportDB(db, { prettyJson: true });
-        const url = URL.createObjectURL(blob);
-        const file = document.createElement('a');
-        file.href = url;
-        file.download = 'bartendr-export.json';
-        file.click();
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error('Failed to export database', error);
-    }
-}
-</script>
 
 <style>
     .app-layout {

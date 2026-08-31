@@ -43,6 +43,10 @@
                         Save
                     </button>
                 </div>
+
+                <button type="button" class="export-button" @click="exportIndexedDB">
+                    Export database
+                </button>
             </div>
         </div>
     </MainLayout>
@@ -50,7 +54,9 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { exportDB } from 'dexie-export-import'
 import MainLayout from '../components/layout/MainLayout.vue'
+import { db } from '../database/database'
 import { DEFAULT_SETTINGS, type AppSettings, useAppSettings } from '../settings'
 
 const { settings, saveSettings } = useAppSettings()
@@ -94,6 +100,23 @@ function saveChanges() {
 function resetToDefaults() {
     draft.value = cloneSettings(DEFAULT_SETTINGS)
     isEditingSnipPrice.value = false
+}
+
+async function exportIndexedDB() {
+    try {
+        const confirmed = confirm('This is only meant for admins, continue?')
+        if (!confirmed) return
+
+        const blob = await exportDB(db, { prettyJson: true })
+        const url = URL.createObjectURL(blob)
+        const file = document.createElement('a')
+        file.href = url
+        file.download = 'bartendr-export.json'
+        file.click()
+        URL.revokeObjectURL(url)
+    } catch (error) {
+        console.error('Failed to export database', error)
+    }
 }
 
 function formatCurrency(value: number) {
@@ -189,7 +212,8 @@ function formatCurrency(value: number) {
 
     .primary-button,
     .secondary-button,
-    .reset-button {
+    .reset-button,
+    .export-button {
         border-radius: 6px;
         padding: 0.75rem 1rem;
         font: inherit;
@@ -215,5 +239,13 @@ function formatCurrency(value: number) {
         background: var(--code-bg);
         color: var(--text-h);
         flex: 1;
+    }
+
+    .export-button {
+        width: 100%;
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-h);
     }
 </style>
