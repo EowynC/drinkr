@@ -13,7 +13,7 @@
                     >
                 </div>
 
-                <div class="setting-row setting-row--value">
+                <div v-if="draft.features.showSnipPricing" class="setting-row setting-row--value">
                     <div class="setting-label-group">
                         <span>Base price for 1 snip</span>
                         <p v-if="!isEditingSnipPrice">{{ formatCurrency(draft.pricing.snipBasePrice) }}</p>
@@ -29,8 +29,8 @@
                         <button v-if="!isEditingSnipPrice" type="button" class="secondary-button" @click="startEditingSnipPrice">
                             Edit
                         </button>
-                        <button v-else type="button" class="secondary-button" @click="cancelEditingSnipPrice">
-                            Cancel
+                        <button v-else type="button" class="primary-button" @click="cancelEditingSnipPrice">
+                            Save
                         </button>
                     </div>
                 </div>
@@ -84,7 +84,6 @@ function startEditingSnipPrice() {
 }
 
 function cancelEditingSnipPrice() {
-    draft.value.pricing.snipBasePrice = settings.value.pricing.snipBasePrice
     isEditingSnipPrice.value = false
 }
 
