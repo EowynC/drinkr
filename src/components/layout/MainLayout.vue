@@ -7,6 +7,7 @@
                 <RouterLink class="nav-link" active-class="active-link" to="/inventory">Inventory</RouterLink>
                 <RouterLink class="nav-link" active-class="active-link" to="/recipe">Recipies</RouterLink>
                 <RouterLink class="nav-link" active-class="active-link" to="/sales">Sales</RouterLink>
+                <RouterLink class="nav-link" active-class="active-link" to="/settings">Settings</RouterLink>
             </nav>
             <a @click="exportIndexedDB">ExportDB</a>
         </header>

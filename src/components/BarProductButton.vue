@@ -30,22 +30,25 @@
     <button class="bar-item-button" @click="emit('sold')">
         <span>{{ name }}</span>
         <span class="bar-item-cost">{{ formatCurrency(cost) }}</span>
-        <span class="bar-item-snips">{{ snipLabel }}</span>
+        <span v-if="showSnipPricing" class="bar-item-snips">{{ snipLabel }}</span>
     </button>
 </template>
 
 <script setup lang="ts">
     import { computed } from 'vue'
+    import { calculateSnipCount, DEFAULT_SETTINGS } from '../settings'
 
     const props = defineProps<{
         name:  string
         cost?: number
+        showSnipPricing?: boolean
+        snipBasePrice?: number
     }>()
 
-    const SNIP_BASE_PRICE = 3
+    const snipBasePrice = computed(() => props.snipBasePrice ?? DEFAULT_SETTINGS.pricing.snipBasePrice)
 
     const snipLabel = computed(() => {
-        const snipCount = Math.max(1, Math.round((props.cost ?? 0) / SNIP_BASE_PRICE))
+        const snipCount = calculateSnipCount(props.cost ?? 0, snipBasePrice.value)
         return `${snipCount} ${snipCount === 1 ? 'snip' : 'snips'}`
     })
 

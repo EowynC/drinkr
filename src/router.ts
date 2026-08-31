@@ -3,6 +3,7 @@ import BarView from "./views/BarView.vue";
 import InventoryView from "./views/InventoryView.vue";
 import SalesView from "./views/SalesView.vue";
 import RecipeView from "./views/RecipeView.vue";
+import SettingsView from "./views/SettingsView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -27,6 +28,10 @@ const router = createRouter({
         {
             path: '/sales',
             component: SalesView
+        },
+        {
+            path: '/settings',
+            component: SettingsView
         },
     ]
 })

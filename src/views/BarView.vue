@@ -10,6 +10,8 @@
                             :key="item.id"
                             :name="item.name"
                             :cost="item.price"
+                            :show-snip-pricing="settings.features.showSnipPricing"
+                            :snip-base-price="settings.pricing.snipBasePrice"
                             @sold="addToSession(item)"
                         />
                     </div>
@@ -19,9 +21,9 @@
             <aside class="sale-sidebar">
                 <h3>Current sale</h3>
                 <p v-if="sessionSales.length < 1">No sales yet</p>
-                <div class="sale-snip-meta">
+                <div v-if="settings.features.showSnipPricing" class="sale-snip-meta">
                     <span>1 snip</span>
-                    <strong>{{ formatCurrency(SNIP_BASE_PRICE) }}</strong>
+                    <strong>{{ formatCurrency(settings.pricing.snipBasePrice) }}</strong>
                 </div>
                 <ul class="sale-list">
                     <li v-for="item in sortedSessionSales" :key="item.id">
@@ -44,7 +46,7 @@
                     <span>Total</span>
                     <div class="sale-total-amounts">
                         <strong>{{ formatCurrency(totalSessionPrice) }}</strong>
-                        <small>{{ formatSnipCount(totalSessionPrice) }}</small>
+                        <small v-if="settings.features.showSnipPricing">({{ formatSnipCount(totalSessionPrice) }})</small>
                     </div>
                 </div>
                 <button type="button" class="confirm-sale-button" @click="confirmSessionSale">
@@ -60,6 +62,7 @@ import { computed, onMounted, ref } from 'vue'
 import MainLayout from '../components/layout/MainLayout.vue'
 import BarProductButton from '../components/BarProductButton.vue'
 import { db, recordSales, type Product, type Sale, type Category } from '../database/database'
+import { calculateSnipCount, useAppSettings } from '../settings'
 
 type SessionSaleItem = {
     id: number
@@ -68,7 +71,7 @@ type SessionSaleItem = {
     quantity: number
 }
 
-const SNIP_BASE_PRICE = 3
+const { settings } = useAppSettings()
 
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
@@ -106,7 +109,7 @@ function formatCurrency(value: number) {
 }
 
 function formatSnipCount(value: number) {
-    const snips = Math.max(1, Math.round(value / SNIP_BASE_PRICE))
+    const snips = calculateSnipCount(value, settings.value.pricing.snipBasePrice)
     return `${snips} ${snips === 1 ? 'snip' : 'snips'}`
 }
 
@@ -206,6 +209,10 @@ async function confirmSessionSale() {
         top: 1rem;
     }
 
+    .sale-sidebar  p {
+        margin: 0 0 1rem;
+    }
+
     .sale-sidebar h3 {
         margin: 0 0 1rem;
         color: var(--text-h);
@@ -274,6 +281,25 @@ async function confirmSessionSale() {
         font-size: 0.92rem;
     }
 
+    .settings-row {
+        display: flex;
+        flex-flow: column;
+        gap: 0.35rem;
+        margin: 0 0 1rem;
+        font-size: 0.82rem;
+        color: var(--text-h);
+    }
+
+    .settings-row input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--text-h);
+    }
+
     .sale-total {
         display: flex;
         justify-content: space-between;
@@ -290,14 +316,12 @@ async function confirmSessionSale() {
 
     .sale-total-amounts {
         display: flex;
-        flex-flow: column;
-        align-items: flex-end;
-        gap: 0.15rem;
+        flex-flow: row;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .sale-total-amounts small {
-        font-size: 0.72rem;
-        opacity: 0.8;
         font-weight: 500;
     }
 
