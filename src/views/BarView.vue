@@ -65,7 +65,7 @@ import BarProductButton from '../components/BarProductButton.vue'
 import { db, recordSales, type Product, type Sale, type Category } from '../database/database'
 import { calculateSnipCount, useAppSettings } from '../settings'
 
-const toast = useToast()
+const toast = useToast({ position: 'top-right' })
 
 type SessionSaleItem = {
     id: number

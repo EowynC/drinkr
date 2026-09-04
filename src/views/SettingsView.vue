@@ -60,7 +60,7 @@ import MainLayout from '../components/layout/MainLayout.vue'
 import { db } from '../database/database'
 import { DEFAULT_SETTINGS, type AppSettings, useAppSettings } from '../settings'
 
-const toast = useToast()
+const toast = useToast({ position: 'top-right' })
 const { settings, saveSettings } = useAppSettings()
 const draft = ref<AppSettings>(cloneSettings(settings.value))
 const isEditingSnipPrice = ref(false)

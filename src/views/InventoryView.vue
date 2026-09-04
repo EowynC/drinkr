@@ -68,7 +68,7 @@ import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import { db, type Category, type InventoryItem, type InventoryUnit, type Product } from '../database/database'
 
-const toast = useToast()
+const toast = useToast({ position: 'top-right' })
 const inventoryItems = ref<InventoryItem[]>([])
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
