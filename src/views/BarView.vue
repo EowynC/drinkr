@@ -2,7 +2,7 @@
     <MainLayout>
         <div class="bar-layout">
             <div class="product-screen">
-                <section v-for="cat in categories" :key="cat.id" class="category">
+                <section v-for="cat in categoriesWithRecipes" :key="cat.id" class="category">
                     <h2>{{ cat.name }}</h2>
                     <div class="product-grid">
                         <BarProductButton
@@ -80,6 +80,10 @@ const recipes = ref<Recipe[]>([])
 const categories = ref<Category[]>([])
 const sales = ref<Sale[]>([])
 const sessionSales = ref<SessionSaleItem[]>([])
+
+const categoriesWithRecipes = computed(() => {
+    return categories.value.filter(category => recipes.value.some(recipe => recipe.categoryId === category.id))
+})
 
 const sortedSessionSales = computed(() => {
     return [...sessionSales.value].sort((first, second) => {

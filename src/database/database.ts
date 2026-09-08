@@ -20,7 +20,7 @@ export interface Sale {
     timestamp: Date
 }
 
-export type InventoryUnit = 'ml' | 'bottle' | 'portion'
+export type InventoryUnit = 'ml' | 'bottle' | 'gr' | 'portion'
 
 export interface InventoryItem {
     id: number

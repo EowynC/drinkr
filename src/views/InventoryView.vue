@@ -72,7 +72,7 @@ const toast = useToast({ position: 'top-right' })
 const inventoryItems = ref<InventoryItem[]>([])
 const stockForm = reactive<{ itemId: number | ''; amount: number | null }>({ itemId: '', amount: null })
 const newItemForm = reactive<{ name: string; unit: InventoryUnit; quantity: number | null }>({ name: '', unit: 'ml', quantity: null })
-const units: InventoryUnit[] = ['ml', 'bottle', 'portion']
+const units: InventoryUnit[] = ['ml', 'bottle', 'gr', 'portion']
 
 onMounted(loadInventory)
 
