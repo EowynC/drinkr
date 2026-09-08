@@ -18,7 +18,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     }
 }
 
-const STORAGE_KEY = 'drinkr.settings'
+const STORAGE_KEY = 'bartendr.settings'
 
 function normaliseSettings(value: Partial<AppSettings> | null | undefined): AppSettings {
     const next = value ?? {}
