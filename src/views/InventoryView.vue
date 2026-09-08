@@ -5,7 +5,7 @@
                 <div><p class="eyebrow">Back of house</p><h2>Inventory</h2></div>
                 <p class="inventory-note">Stock is deducted when a sale is confirmed.</p>
             </header>
-
+<!-- 
             <section class="inventory-section product-section">
                 <div class="section-heading">
                     <div><p class="eyebrow">What the customer can order</p><h3>Bar products</h3></div>
@@ -23,7 +23,7 @@
                 <p class="product-list">
                     <span v-for="value in products">{{ value.name }}, </span>
                 </p>
-            </section>
+            </section> -->
 
             <section class="inventory-section">
                 <div class="section-heading">
@@ -66,23 +66,18 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
-import { db, type Category, type InventoryItem, type InventoryUnit, type Product } from '../database/database'
+import { db, type InventoryItem, type InventoryUnit } from '../database/database'
 
 const toast = useToast({ position: 'top-right' })
 const inventoryItems = ref<InventoryItem[]>([])
-const products = ref<Product[]>([])
-const categories = ref<Category[]>([])
 const stockForm = reactive<{ itemId: number | ''; amount: number | null }>({ itemId: '', amount: null })
 const newItemForm = reactive<{ name: string; unit: InventoryUnit; quantity: number | null }>({ name: '', unit: 'ml', quantity: null })
-const productForm = reactive<{ name: string; categoryId: number | ''; price: number | null }>({ name: '', categoryId: '', price: null })
 const units: InventoryUnit[] = ['ml', 'bottle', 'portion']
 
 onMounted(loadInventory)
 
 async function loadInventory() {
     inventoryItems.value = await db.inventoryItems.toArray()
-    products.value = await db.products.toArray()
-    categories.value = await db.categories.toArray()
 }
 
 async function addStock() {
@@ -125,27 +120,6 @@ async function addInventoryItem() {
     } catch (error) {
         console.error('Unable to add inventory item', error)
         toast.error('Unable to add stock item.')
-    }
-}
-
-async function addProduct() {
-    if (!productForm.name || productForm.categoryId === '' || productForm.price === null || productForm.price < 0) {
-        toast.warning('Complete the product fields before saving.')
-        return
-    }
-
-    const productName = productForm.name
-
-    try {
-        await db.products.add({ id: Date.now(), name: productName, categoryId: productForm.categoryId, price: productForm.price })
-        productForm.name = ''
-        productForm.categoryId = ''
-        productForm.price = null
-        await loadInventory()
-        toast.success(`${productName} added to the bar.`)
-    } catch (error) {
-        console.error('Unable to add product', error)
-        toast.error('Unable to add product.')
     }
 }
 

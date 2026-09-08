@@ -12,17 +12,17 @@
             </div>
 
             <div v-if="draft.mode === 'existing'" class="field-group">
-                <label class="field-label" for="selected-product">Menu item</label>
-                <select id="selected-product" v-model="draft.productId" aria-label="Choose menu item" required @change="emit('product-change', draft.productId)">
+                <label class="field-label" for="selected-recipe">Menu item</label>
+                <select id="selected-recipe" v-model="draft.recipeId" aria-label="Choose menu item" required @change="emit('recipe-change', draft.recipeId)">
                     <option disabled value="">Choose menu item</option>
-                    <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
+                    <option v-for="recipe in recipes" :key="recipe.id" :value="recipe.id">{{ recipe.name }}</option>
                 </select>
             </div>
 
             <div v-else class="product-form-grid">
                 <div class="field-group">
                     <label class="field-label" for="new-product-name">Menu item name</label>
-                    <input id="new-product-name" v-model.trim="draft.productName" type="text" aria-label="Menu item name" placeholder="e.g. Espresso Martini" required>
+                    <input id="new-recipe-name" v-model.trim="draft.recipeName" type="text" aria-label="Menu item name" placeholder="e.g. Espresso Martini" required>
                 </div>
                 <div class="field-group">
                     <label class="field-label" for="new-product-category">Category</label>
@@ -33,7 +33,7 @@
                 </div>
                 <div class="field-group">
                     <label class="field-label" for="new-product-price">Price</label>
-                    <input id="new-product-price" v-model.number="draft.price" type="number" min="0" step="0.01" aria-label="Menu item price" placeholder="Price" required>
+                    <input id="new-recipe-price" v-model.number="draft.price" type="number" min="0" step="0.01" aria-label="Menu item price" placeholder="Price" required>
                 </div>
             </div>
 
@@ -63,14 +63,14 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
-import type { Category, InventoryItem, Product } from '../database/database'
+import type { Category, InventoryItem, Recipe } from '../database/database'
 
 export type WizardMode = 'existing' | 'new'
 
 export interface RecipeWizardState {
     mode: WizardMode
-    productId: number | ''
-    productName: string
+    recipeId: number | ''
+    recipeName: string
     categoryId: number | ''
     price: number | null
     ingredientRows: Array<{ inventoryItemId: number | ''; quantity: number | null }>
@@ -79,7 +79,7 @@ export interface RecipeWizardState {
 const props = defineProps<{
     visible: boolean
     modelValue: RecipeWizardState
-    products: Product[]
+    recipes: Recipe[]
     categories: Category[]
     inventoryItems: InventoryItem[]
 }>()
@@ -87,7 +87,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (event: 'close'): void
     (event: 'save', payload: RecipeWizardState): void
-    (event: 'product-change', productId: number | ''): void
+    (event: 'recipe-change', recipeId: number | ''): void
 }>()
 
 const draft = reactive<RecipeWizardState>(cloneWizard(props.modelValue))
@@ -97,10 +97,10 @@ const canSave = computed(() => {
     if (!hasIngredients) return false
 
     if (draft.mode === 'existing') {
-        return draft.productId !== ''
+        return draft.recipeId !== ''
     }
 
-    return !!draft.productName.trim() && draft.categoryId !== '' && draft.price !== null && draft.price >= 0
+    return !!draft.recipeName.trim() && draft.categoryId !== '' && draft.price !== null && draft.price >= 0
 })
 
 watch(
@@ -114,8 +114,8 @@ watch(
 function cloneWizard(value: RecipeWizardState): RecipeWizardState {
     return {
         mode: value.mode,
-        productId: value.productId,
-        productName: value.productName,
+        recipeId: value.recipeId,
+        recipeName: value.recipeName,
         categoryId: value.categoryId,
         price: value.price,
         ingredientRows: value.ingredientRows.map(row => ({

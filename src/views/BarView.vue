@@ -6,7 +6,7 @@
                     <h2>{{ cat.name }}</h2>
                     <div class="product-grid">
                         <BarProductButton
-                            v-for="item in products.filter(val => val.categoryId === cat.id)"
+                            v-for="item in recipes.filter(recipe => recipe.categoryId === cat.id)"
                             :key="item.id"
                             :name="item.name"
                             :cost="item.price"
@@ -62,7 +62,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import BarProductButton from '../components/BarProductButton.vue'
-import { db, recordSales, type Product, type Sale, type Category } from '../database/database'
+import { db, recordSales, type Recipe, type Sale, type Category } from '../database/database'
 import { calculateSnipCount, useAppSettings } from '../settings'
 
 const toast = useToast({ position: 'top-right' })
@@ -76,30 +76,30 @@ type SessionSaleItem = {
 
 const { settings } = useAppSettings()
 
-const products = ref<Product[]>([])
+const recipes = ref<Recipe[]>([])
 const categories = ref<Category[]>([])
 const sales = ref<Sale[]>([])
 const sessionSales = ref<SessionSaleItem[]>([])
 
 const sortedSessionSales = computed(() => {
     return [...sessionSales.value].sort((first, second) => {
-        const firstProduct = products.value.find(item => item.id === first.id)
-        const secondProduct = products.value.find(item => item.id === second.id)
-        const firstCategoryId = firstProduct?.categoryId ?? first.categoryId
-        const secondCategoryId = secondProduct?.categoryId ?? second.categoryId
+        const firstRecipe = recipes.value.find(item => item.id === first.id)
+        const secondRecipe = recipes.value.find(item => item.id === second.id)
+        const firstCategoryId = firstRecipe?.categoryId ?? first.categoryId
+        const secondCategoryId = secondRecipe?.categoryId ?? second.categoryId
 
         if (firstCategoryId !== secondCategoryId) {
             return firstCategoryId - secondCategoryId
         }
 
-        return (firstProduct?.name ?? first.name).localeCompare(secondProduct?.name ?? second.name)
+        return (firstRecipe?.name ?? first.name).localeCompare(secondRecipe?.name ?? second.name)
     })
 })
 
 const totalSessionPrice = computed(() => {
     return sessionSales.value.reduce((total, item) => {
-        const product = products.value.find(productItem => productItem.id === item.id)
-        const unitPrice = product?.price ?? 0
+        const recipe = recipes.value.find(recipeItem => recipeItem.id === item.id)
+        const unitPrice = recipe?.price ?? 0
         return total + unitPrice * item.quantity
     }, 0)
 })
@@ -117,13 +117,13 @@ function formatSnipCount(value: number) {
 }
 
 onMounted(async () => {
-    products.value = await db.products.toArray()
+    recipes.value = await db.recipes.toArray()
     categories.value = await db.categories.toArray()
     sales.value = await db.sales.toArray()
 })
 
-function addToSession(product: Product | SessionSaleItem) {
-    const existing = sessionSales.value.find(item => item.id === product.id)
+function addToSession(recipe: Recipe | SessionSaleItem) {
+    const existing = sessionSales.value.find(item => item.id === recipe.id)
 
     if (existing) {
         existing.quantity += 1
@@ -131,15 +131,15 @@ function addToSession(product: Product | SessionSaleItem) {
     }
 
     sessionSales.value.push({
-        id: product.id,
-        name: product.name,
-        categoryId: product.categoryId,
+        id: recipe.id,
+        name: recipe.name,
+        categoryId: recipe.categoryId,
         quantity: 1
     })
 }
 
-function subtractFromSession(product: Product | SessionSaleItem) {
-    const existing = sessionSales.value.find(item => item.id === product.id)
+function subtractFromSession(recipe: Recipe | SessionSaleItem) {
+    const existing = sessionSales.value.find(item => item.id === recipe.id)
 
     if (!existing) return
 
@@ -151,8 +151,8 @@ function subtractFromSession(product: Product | SessionSaleItem) {
     existing.quantity -= 1
 }
 
-function removeFromSession(productId: number) {
-    sessionSales.value = sessionSales.value.filter(item => item.id !== productId)
+function removeFromSession(recipeId: number) {
+    sessionSales.value = sessionSales.value.filter(item => item.id !== recipeId)
 }
 
 async function confirmSessionSale() {
@@ -162,7 +162,7 @@ async function confirmSessionSale() {
     }
 
     try {
-        await recordSales(sessionSales.value.map(item => ({ productId: item.id, quantity: item.quantity })))
+        await recordSales(sessionSales.value.map(item => ({ recipeId: item.id, quantity: item.quantity })))
         sales.value = await db.sales.toArray()
         sessionSales.value = []
         toast.success('Sale recorded successfully.')

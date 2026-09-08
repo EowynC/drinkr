@@ -16,8 +16,8 @@
                                     <strong>{{ day.totals.units }}</strong>
                                 </div>
                                 <div>
-                                    <span>Products sold</span>
-                                    <strong>{{ day.totals.products }}</strong>
+                                    <span>Recipes sold</span>
+                                    <strong>{{ day.totals.recipes }}</strong>
                                 </div>
                                 <div>
                                     <span>Total revenue</span>
@@ -31,18 +31,18 @@
                             <table class="sales-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 25%;" scope="col">Product</th>
+                                        <th style="width: 25%;" scope="col">Recipe</th>
                                         <th style="width: 25%;" scope="col">Amount sold</th>
                                         <th style="width: 25%;" scope="col">Price per unit</th>
                                         <th style="width: 25%;" scope="col">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="product in category.products" :key="product.name">
-                                        <td>{{ product.name }}</td>
-                                        <td>{{ product.quantity }}</td>
-                                        <td>{{ formatCurrency(product.price ?? 0) }}</td>
-                                        <td>{{ formatCurrency((product.price ?? 0) * product.quantity) }}</td>
+                                    <tr v-for="recipe in category.recipes" :key="recipe.name">
+                                        <td>{{ recipe.name }}</td>
+                                        <td>{{ recipe.quantity }}</td>
+                                        <td>{{ formatCurrency(recipe.price ?? 0) }}</td>
+                                        <td>{{ formatCurrency((recipe.price ?? 0) * recipe.quantity) }}</td>
                                     </tr>
                                     <tr class="sales-total-row">
                                         <td>Total</td>
@@ -65,10 +65,10 @@ import { computed, onMounted, ref } from 'vue'
 import MainLayout from '../components/layout/MainLayout.vue'
 import Tabs from '../components/Tabs.vue'
 import Tab from '../components/Tab.vue'
-import { db, type Category, type Product, type Sale } from '../database/database'
+import { db, type Category, type Recipe, type Sale } from '../database/database'
 
 const sales = ref<Sale[]>([])
-const products = ref<Product[]>([])
+const recipes = ref<Recipe[]>([])
 const categories = ref<Category[]>([])
 
 const groupedSales = computed(() => {
@@ -78,10 +78,10 @@ const groupedSales = computed(() => {
         categories: Map<string, {
             id: number
             name: string
-            products: Map<string, { name: string; quantity: number; price?: number | undefined }>
+            recipes: Map<string, { name: string; quantity: number; price?: number | undefined }>
             totals: { units: number; revenue: number }
         }>
-        totals: { units: number; revenue: number; products: number }
+        totals: { units: number; revenue: number; recipes: number }
     }>()
 
     for (const sale of sales.value) {
@@ -93,13 +93,13 @@ const groupedSales = computed(() => {
                 key: dayKey,
                 label: formatDay(sale.timestamp),
                 categories: new Map(),
-                totals: { units: 0, revenue: 0, products: 0 }
+                totals: { units: 0, revenue: 0, recipes: 0 }
             }
             days.set(dayKey, day)
         }
 
-        const product = products.value.find(item => item.id === sale.productId)
-        const category = categories.value.find(item => item.id === product?.categoryId)
+        const recipe = recipes.value.find(item => item.id === sale.recipeId)
+        const category = categories.value.find(item => item.id === recipe?.categoryId)
         const categoryId = category?.id ?? Number.MAX_SAFE_INTEGER
         const categoryName = category?.name ?? 'Unknown category'
         let categorySales = day.categories.get(categoryName)
@@ -108,24 +108,24 @@ const groupedSales = computed(() => {
             categorySales = {
                 id: categoryId,
                 name: categoryName,
-                products: new Map(),
+                recipes: new Map(),
                 totals: { units: 0, revenue: 0 }
             }
             day.categories.set(categoryName, categorySales)
         }
 
-        const productName = product?.name ?? 'Unknown product'
-        const productSales = categorySales.products.get(productName)
-        const unitPrice = product?.price ?? 0
+        const recipeName = recipe?.name ?? 'Unknown recipe'
+        const recipeSales = categorySales.recipes.get(recipeName)
+        const unitPrice = recipe?.price ?? 0
         const saleTotal = unitPrice * sale.quantity
 
-        if (productSales) {
-            productSales.quantity += sale.quantity
+        if (recipeSales) {
+            recipeSales.quantity += sale.quantity
         } else {
-            categorySales.products.set(productName, {
-                name: productName,
+            categorySales.recipes.set(recipeName, {
+                name: recipeName,
                 quantity: sale.quantity,
-                price: product?.price
+                price: recipe?.price
             })
         }
 
@@ -133,7 +133,7 @@ const groupedSales = computed(() => {
         categorySales.totals.revenue += saleTotal
         day.totals.units += sale.quantity
         day.totals.revenue += saleTotal
-        day.totals.products += 1
+        day.totals.recipes += 1
     }
 
     return [...days.values()]
@@ -144,9 +144,9 @@ const groupedSales = computed(() => {
                 .sort((first, second) => first.id - second.id)
                 .map(category => ({
                     ...category,
-                    products: [...category.products.values()].map(product => ({
-                        ...product,
-                        total: (product.price ?? 0) * product.quantity
+                    recipes: [...category.recipes.values()].map(recipe => ({
+                        ...recipe,
+                        total: (recipe.price ?? 0) * recipe.quantity
                     })),
                     totals: {
                         units: category.totals.units,
@@ -156,13 +156,13 @@ const groupedSales = computed(() => {
             totals: {
                 units: day.totals.units,
                 revenue: day.totals.revenue,
-                products: day.totals.products
+                recipes: day.totals.recipes
             }
         }))
 })
 
 onMounted(async () => {
-    products.value = await db.products.toArray()
+    recipes.value = await db.recipes.toArray()
     categories.value = await db.categories.toArray()
     sales.value = await db.sales.toArray()
 })

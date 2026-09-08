@@ -1,7 +1,7 @@
 import { db } from './database'
 
 export async function seedDatabase() {
-    const productCount = await db.products.count()
+    const recipeCount = await db.recipes.count()
     const categoryCount = await db.categories.count()
     const inventoryCount = await db.inventoryItems.count()
 
@@ -33,7 +33,7 @@ export async function seedDatabase() {
         },
     ])
 
-    if (productCount === 0) await db.products.bulkPut([
+    if (recipeCount === 0) await db.recipes.bulkPut([
         {
             id: 1,
             name: 'Coke',
@@ -92,11 +92,11 @@ export async function seedDatabase() {
             { id: 4, name: 'Lime juice', unit: 'bottle', quantity: 10 }
         ])
 
-        await db.recipeLines.bulkPut([
-            { id: 1, productId: 1, inventoryItemId: 1, quantity: 250 },
-            { id: 2, productId: 5, inventoryItemId: 2, quantity: 50 },
-            { id: 3, productId: 5, inventoryItemId: 3, quantity: 150 },
-            { id: 4, productId: 8, inventoryItemId: 4, quantity: 1 }
+        await db.recipeIngredients.bulkPut([
+            { id: 1, recipeId: 1, inventoryItemId: 1, quantity: 250 },
+            { id: 2, recipeId: 5, inventoryItemId: 2, quantity: 50 },
+            { id: 3, recipeId: 5, inventoryItemId: 3, quantity: 150 },
+            { id: 4, recipeId: 8, inventoryItemId: 4, quantity: 1 }
         ])
     }
 }

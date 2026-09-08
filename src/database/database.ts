@@ -1,9 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie'
 
-export interface Product {
+export interface Recipe {
     id: number
     name: string
-    categoryId: number 
+    categoryId: number
     price: number
 }
 
@@ -15,7 +15,7 @@ export interface Category {
 
 export interface Sale {
     id?: number
-    productId: number
+    recipeId: number
     quantity: number
     timestamp: Date
 }
@@ -29,41 +29,35 @@ export interface InventoryItem {
     quantity: number
 }
 
-export interface RecipeLine {
+export interface RecipeIngredient {
     id?: number
-    productId: number
+    recipeId: number
     inventoryItemId: number
     quantity: number
 }
 
-const db = new Dexie('DrinkrDatabase') as Dexie & {
-    products: EntityTable<Product, 'id'>
+const db = new Dexie('BartendrDatabase') as Dexie & {
+    recipes: EntityTable<Recipe, 'id'>
     categories: EntityTable<Category, 'id'>
     sales: EntityTable<Sale, 'id'>
     inventoryItems: EntityTable<InventoryItem, 'id'>
-    recipeLines: EntityTable<RecipeLine, 'id'>
+    recipeIngredients: EntityTable<RecipeIngredient, 'id'>
 }
 
 db.version(1).stores({
-    products: 'id, name, categoryId, price',
+    recipes: 'id, name, categoryId, price',
     categories: 'id, name, isAlcoholic',
-    sales: '++id, productId, quantity, timestamp'
-})
-
-db.version(2).stores({
-    products: 'id, name, categoryId, price',
-    categories: 'id, name, isAlcoholic',
-    sales: '++id, productId, quantity, timestamp',
+    sales: '++id, recipeId, quantity, timestamp',
     inventoryItems: 'id, name, unit, quantity',
-    recipeLines: '++id, productId, inventoryItemId'
+    recipeIngredients: '++id, recipeId, inventoryItemId'
 })
 
-export async function recordSales(items: Array<{ productId: number; quantity: number }>) {
-    return db.transaction('rw', db.sales, db.inventoryItems, db.recipeLines, async () => {
+export async function recordSales(items: Array<{ recipeId: number; quantity: number }>) {
+    return db.transaction('rw', db.sales, db.inventoryItems, db.recipeIngredients, async () => {
         const changes = new Map<number, number>()
 
         for (const item of items) {
-            const recipe = await db.recipeLines.where('productId').equals(item.productId).toArray()
+            const recipe = await db.recipeIngredients.where('recipeId').equals(item.recipeId).toArray()
             for (const line of recipe) {
                 changes.set(line.inventoryItemId, (changes.get(line.inventoryItemId) ?? 0) + line.quantity * item.quantity)
             }
@@ -84,8 +78,8 @@ export async function recordSales(items: Array<{ productId: number; quantity: nu
     })
 }
 
-export async function recordSale(productId: number, quantity: number) {
-    return recordSales([{ productId, quantity }])
+export async function recordSale(recipeId: number, quantity: number) {
+    return recordSales([{ recipeId, quantity }])
 }
 
 export { db }

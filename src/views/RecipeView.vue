@@ -12,13 +12,13 @@
                 </div>
                 <p v-if="recipes.length === 0" class="empty-state">No recipes yet. Create a recipe to connect stock to a sale.</p>
                 <div v-else class="recipe-list">
-                    <article v-for="recipe in recipes" :key="recipe.product.id" class="recipe-card">
+                    <article v-for="recipe in recipesWithIngredients" :key="recipe.recipe.id" class="recipe-card">
                         <div class="recipe-title">
                             <div class="recipe-title-copy">
-                                <h4>{{ recipe.product.name }}</h4>
+                                <h4>{{ recipe.recipe.name }}</h4>
                                 <p>{{ recipe.lines.length }} ingredient{{ recipe.lines.length === 1 ? '' : 's' }} per sale</p>
                             </div>
-                            <button type="button" class="edit-button" @click="openRecipeWizardForItem(recipe.product.id)">Edit</button>
+                            <button type="button" class="edit-button" @click="openRecipeWizardForItem(recipe.recipe.id)">Edit</button>
                         </div>
                         <ul>
                             <li v-for="line in recipe.lines" :key="line.id">
@@ -34,11 +34,11 @@
         <RecipeWizardModal
             :visible="showRecipeWizard"
             :model-value="wizard"
-            :products="products"
+            :recipes="recipes"
             :categories="categories"
             :inventory-items="inventoryItems"
             @close="closeRecipeWizard"
-            @product-change="onMenuItemChange"
+            @recipe-change="onMenuItemChange"
             @save="saveRecipe"
         />
     </MainLayout>
@@ -49,68 +49,68 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import RecipeWizardModal, { type RecipeWizardState } from '../components/RecipeWizardModal.vue'
-import { db, type Category, type InventoryItem, type Product, type RecipeLine } from '../database/database'
+import { db, type Category, type InventoryItem, type Recipe, type RecipeIngredient } from '../database/database'
 
 const toast = useToast({ position: 'top-right' })
 const inventoryItems = ref<InventoryItem[]>([])
-const products = ref<Product[]>([])
+const recipes = ref<Recipe[]>([])
 const categories = ref<Category[]>([])
-const recipeLines = ref<RecipeLine[]>([])
+const recipeIngredients = ref<RecipeIngredient[]>([])
 const showRecipeWizard = ref(false)
 
 const wizard = reactive<RecipeWizardState>({
     mode: 'existing',
-    productId: '',
-    productName: '',
+    recipeId: '',
+    recipeName: '',
     categoryId: '',
     price: null,
     ingredientRows: [{ inventoryItemId: '', quantity: null }]
 })
 
-const recipes = computed(() => products.value.map(product => ({
-    product,
-    lines: recipeLines.value.filter(line => line.productId === product.id).map(line => ({ ...line, item: inventoryItems.value.find(item => item.id === line.inventoryItemId)! })).filter(line => line.item)
+const recipesWithIngredients = computed(() => recipes.value.map(recipe => ({
+    recipe,
+    lines: recipeIngredients.value.filter(line => line.recipeId === recipe.id).map(line => ({ ...line, item: inventoryItems.value.find(item => item.id === line.inventoryItemId)! })).filter(line => line.item)
 })).filter(recipe => recipe.lines.length > 0))
 
 onMounted(loadInventory)
 
 async function loadInventory() {
     inventoryItems.value = await db.inventoryItems.toArray()
-    products.value = await db.products.toArray()
+    recipes.value = await db.recipes.toArray()
     categories.value = await db.categories.toArray()
-    recipeLines.value = await db.recipeLines.toArray()
+    recipeIngredients.value = await db.recipeIngredients.toArray()
 }
 
 function openRecipeWizard() {
     showRecipeWizard.value = true
     wizard.mode = 'new'
-    wizard.productId = ''
-    wizard.productName = ''
+    wizard.recipeId = ''
+    wizard.recipeName = ''
     wizard.categoryId = ''
     wizard.price = null
     wizard.ingredientRows = [{ inventoryItemId: '', quantity: null }]
 }
 
-function openRecipeWizardForItem(productId: number) {
+function openRecipeWizardForItem(recipeId: number) {
     showRecipeWizard.value = true
     wizard.mode = 'existing'
-    wizard.productId = productId
-    wizard.productName = ''
+    wizard.recipeId = recipeId
+    wizard.recipeName = ''
     wizard.categoryId = ''
     wizard.price = null
     onMenuItemChange()
 }
 
-function onMenuItemChange(productId: number | '' = wizard.productId) {
-    const targetId = productId === '' ? wizard.productId : productId
+function onMenuItemChange(recipeId: number | '' = wizard.recipeId) {
+    const targetId = recipeId === '' ? wizard.recipeId : recipeId
     if (wizard.mode !== 'existing' || targetId === '') {
         return
     }
 
-    wizard.productId = targetId
-    const selected = products.value.find(product => product.id === Number(targetId))
-    const rows = recipeLines.value
-        .filter(line => line.productId === Number(targetId))
+    wizard.recipeId = targetId
+    const selected = recipes.value.find(recipe => recipe.id === Number(targetId))
+    const rows = recipeIngredients.value
+        .filter(line => line.recipeId === Number(targetId))
         .map(line => ({
             inventoryItemId: line.inventoryItemId,
             quantity: line.quantity
@@ -118,14 +118,14 @@ function onMenuItemChange(productId: number | '' = wizard.productId) {
 
     wizard.ingredientRows = rows.length > 0 ? rows : [{ inventoryItemId: '', quantity: null }]
     if (selected) {
-        wizard.productName = selected.name
+        wizard.recipeName = selected.name
     }
 }
 
 function closeRecipeWizard() {
     showRecipeWizard.value = false
-    wizard.productId = ''
-    wizard.productName = ''
+    wizard.recipeId = ''
+    wizard.recipeName = ''
     wizard.categoryId = ''
     wizard.price = null
     wizard.ingredientRows = [{ inventoryItemId: '', quantity: null }]
@@ -141,26 +141,26 @@ async function saveRecipe(payload: RecipeWizardState) {
     }
 
     try {
-        if (wizard.mode === 'existing' && wizard.productId !== '') {
-            const productId = Number(wizard.productId)
-            await db.transaction('rw', db.recipeLines, async () => {
-                await db.recipeLines.where('productId').equals(productId).delete()
+        if (wizard.mode === 'existing' && wizard.recipeId !== '') {
+            const recipeId = Number(wizard.recipeId)
+            await db.transaction('rw', db.recipeIngredients, async () => {
+                await db.recipeIngredients.where('recipeId').equals(recipeId).delete()
                 for (const row of validIngredients) {
-                    await db.recipeLines.add({ productId, inventoryItemId: Number(row.inventoryItemId), quantity: Number(row.quantity) })
+                    await db.recipeIngredients.add({ recipeId, inventoryItemId: Number(row.inventoryItemId), quantity: Number(row.quantity) })
                 }
             })
         } else {
-            const productId = Date.now()
-            await db.transaction('rw', db.products, db.recipeLines, async () => {
-                await db.products.add({
-                    id: productId,
-                    name: wizard.productName.trim(),
+            const recipeId = Date.now()
+            await db.transaction('rw', db.recipes, db.recipeIngredients, async () => {
+                await db.recipes.add({
+                    id: recipeId,
+                    name: wizard.recipeName.trim(),
                     categoryId: Number(wizard.categoryId),
                     price: Number(wizard.price)
                 })
 
                 for (const row of validIngredients) {
-                    await db.recipeLines.add({ productId, inventoryItemId: Number(row.inventoryItemId), quantity: Number(row.quantity) })
+                    await db.recipeIngredients.add({ recipeId, inventoryItemId: Number(row.inventoryItemId), quantity: Number(row.quantity) })
                 }
             })
         }
