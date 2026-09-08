@@ -17,6 +17,8 @@
                     <option disabled value="">Choose menu item</option>
                     <option v-for="recipe in recipes" :key="recipe.id" :value="recipe.id">{{ recipe.name }}</option>
                 </select>
+                <label class="field-label" for="existing-recipe-name">Recipe name</label>
+                <input id="existing-recipe-name" v-model.trim="draft.recipeName" type="text" aria-label="Recipe name" required>
             </div>
 
             <div v-else class="product-form-grid">
@@ -97,7 +99,7 @@ const canSave = computed(() => {
     if (!hasIngredients) return false
 
     if (draft.mode === 'existing') {
-        return draft.recipeId !== ''
+        return draft.recipeId !== '' && !!draft.recipeName.trim()
     }
 
     return !!draft.recipeName.trim() && draft.categoryId !== '' && draft.price !== null && draft.price >= 0

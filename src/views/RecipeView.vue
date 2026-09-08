@@ -143,7 +143,8 @@ async function saveRecipe(payload: RecipeWizardState) {
     try {
         if (wizard.mode === 'existing' && wizard.recipeId !== '') {
             const recipeId = Number(wizard.recipeId)
-            await db.transaction('rw', db.recipeIngredients, async () => {
+            await db.transaction('rw', db.recipes, db.recipeIngredients, async () => {
+                await db.recipes.update(recipeId, { name: wizard.recipeName.trim() })
                 await db.recipeIngredients.where('recipeId').equals(recipeId).delete()
                 for (const row of validIngredients) {
                     await db.recipeIngredients.add({ recipeId, inventoryItemId: Number(row.inventoryItemId), quantity: Number(row.quantity) })
