@@ -13,6 +13,15 @@
                     >
                 </div>
 
+                <div class="setting-row">
+                    <span>Show undo last sale in the bar</span>
+                    <input
+                        :checked="draft.features.showUndoLastSale"
+                        type="checkbox"
+                        @change="toggleUndoLastSale"
+                    >
+                </div>
+
                 <div v-if="draft.features.showSnipPricing" class="setting-row setting-row--value">
                     <div class="setting-label-group">
                         <span>Base price for 1 snip</span>
@@ -77,6 +86,11 @@ function cloneSettings(value: AppSettings): AppSettings {
 function toggleSnipPricing(event: Event) {
     const target = event.target as HTMLInputElement | null
     draft.value.features.showSnipPricing = !!target?.checked
+}
+
+function toggleUndoLastSale(event: Event) {
+    const target = event.target as HTMLInputElement | null
+    draft.value.features.showUndoLastSale = !!target?.checked
 }
 
 function startEditingSnipPrice() {

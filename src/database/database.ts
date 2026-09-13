@@ -18,6 +18,7 @@ export interface Sale {
     recipeId: number
     quantity: number
     timestamp: Date
+    saleGroupId?: string
 }
 
 export type InventoryUnit = 'ml' | 'bottle' | 'gr' | 'portion'
@@ -52,9 +53,14 @@ db.version(1).stores({
     recipeIngredients: '++id, recipeId, inventoryItemId'
 })
 
+db.version(2).stores({
+    sales: '++id, recipeId, quantity, timestamp, saleGroupId'
+})
+
 export async function recordSales(items: Array<{ recipeId: number; quantity: number }>) {
     return db.transaction('rw', db.sales, db.inventoryItems, db.recipeIngredients, async () => {
         const changes = new Map<number, number>()
+        const saleGroupId = crypto.randomUUID()
 
         for (const item of items) {
             const recipe = await db.recipeIngredients.where('recipeId').equals(item.recipeId).toArray()
@@ -70,11 +76,50 @@ export async function recordSales(items: Array<{ recipeId: number; quantity: num
             }
         }
 
-        await db.sales.bulkAdd(items.map(item => ({ ...item, timestamp: new Date() })))
+        await db.sales.bulkAdd(items.map(item => ({ ...item, saleGroupId, timestamp: new Date() })))
 
         for (const [inventoryItemId, amount] of changes) {
             await db.inventoryItems.update(inventoryItemId, { quantity: (await db.inventoryItems.get(inventoryItemId))!.quantity - amount })
         }
+    })
+}
+
+export async function undoLastSale() {
+    return db.transaction('rw', db.sales, db.inventoryItems, db.recipeIngredients, async () => {
+        const startOfToday = new Date()
+        startOfToday.setHours(0, 0, 0, 0)
+        const startOfTomorrow = new Date(startOfToday)
+        startOfTomorrow.setDate(startOfTomorrow.getDate() + 1)
+        const lastSale = await db.sales
+            .where('timestamp')
+            .between(startOfToday, startOfTomorrow, true, false)
+            .last()
+        if (!lastSale?.id) return false
+
+        const saleGroup = lastSale.saleGroupId
+            ? await db.sales.where('saleGroupId').equals(lastSale.saleGroupId).toArray()
+            : [lastSale]
+        const changes = new Map<number, number>()
+
+        for (const sale of saleGroup) {
+            const ingredients = await db.recipeIngredients.where('recipeId').equals(sale.recipeId).toArray()
+            for (const ingredient of ingredients) {
+                changes.set(
+                    ingredient.inventoryItemId,
+                    (changes.get(ingredient.inventoryItemId) ?? 0) + ingredient.quantity * sale.quantity
+                )
+            }
+        }
+
+        for (const [inventoryItemId, amount] of changes) {
+            const item = await db.inventoryItems.get(inventoryItemId)
+            if (item) {
+                await db.inventoryItems.update(inventoryItemId, { quantity: item.quantity + amount })
+            }
+        }
+
+        await db.sales.bulkDelete(saleGroup.map(sale => sale.id!))
+        return true
     })
 }
 

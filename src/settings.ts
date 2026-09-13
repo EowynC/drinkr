@@ -3,6 +3,7 @@ import { ref } from 'vue'
 export type AppSettings = {
     features: {
         showSnipPricing: boolean
+        showUndoLastSale: boolean
     }
     pricing: {
         snipBasePrice: number
@@ -11,7 +12,8 @@ export type AppSettings = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
     features: {
-        showSnipPricing: false
+        showSnipPricing: false,
+        showUndoLastSale: false
     },
     pricing: {
         snipBasePrice: 3

@@ -52,6 +52,15 @@
                 <button type="button" class="confirm-sale-button" @click="confirmSessionSale">
                     Confirm sale
                 </button>
+                <button
+                    v-if="settings.features.showUndoLastSale"
+                    type="button"
+                    class="undo-sale-button"
+                    :disabled="!hasTodaySales"
+                    @click="undoSale"
+                >
+                    Undo last sale
+                </button>
             </aside>
         </div>
     </MainLayout>
@@ -62,7 +71,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import BarProductButton from '../components/BarProductButton.vue'
-import { db, recordSales, type Recipe, type Sale, type Category } from '../database/database'
+import { db, recordSales, undoLastSale, type Recipe, type Sale, type Category } from '../database/database'
 import { calculateSnipCount, useAppSettings } from '../settings'
 
 const toast = useToast({ position: 'top-right' })
@@ -80,6 +89,11 @@ const recipes = ref<Recipe[]>([])
 const categories = ref<Category[]>([])
 const sales = ref<Sale[]>([])
 const sessionSales = ref<SessionSaleItem[]>([])
+
+const hasTodaySales = computed(() => {
+    const today = new Date()
+    return sales.value.some(sale => isSameLocalDay(sale.timestamp, today))
+})
 
 const categoriesWithRecipes = computed(() => {
     return categories.value.filter(category => recipes.value.some(recipe => recipe.categoryId === category.id))
@@ -118,6 +132,12 @@ function formatCurrency(value: number) {
 function formatSnipCount(value: number) {
     const snips = calculateSnipCount(value, settings.value.pricing.snipBasePrice)
     return `${snips} ${snips === 1 ? 'snip' : 'snips'}`
+}
+
+function isSameLocalDay(first: Date, second: Date) {
+    return first.getFullYear() === second.getFullYear()
+        && first.getMonth() === second.getMonth()
+        && first.getDate() === second.getDate()
 }
 
 onMounted(async () => {
@@ -172,6 +192,24 @@ async function confirmSessionSale() {
         toast.success('Sale recorded successfully.')
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unable to record sale'
+        toast.error(message)
+    }
+}
+
+async function undoSale() {
+    if (!window.confirm('Undo the last sale and return its items to inventory?')) return
+
+    try {
+        const undone = await undoLastSale()
+        if (!undone) {
+            toast.warning('There are no sales to undo.')
+            return
+        }
+
+        sales.value = await db.sales.toArray()
+        toast.success('Last sale undone.')
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to undo the last sale'
         toast.error(message)
     }
 }
@@ -345,5 +383,23 @@ async function confirmSessionSale() {
         font: inherit;
         font-weight: 600;
         cursor: pointer;
+    }
+
+    .undo-sale-button {
+        width: 100%;
+        margin-top: 0.5rem;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-h);
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .undo-sale-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
     }
 </style>
