@@ -233,9 +233,20 @@ button {
 .stock-item-top { 
     justify-content: space-between; 
     gap: 0.5rem; 
+    min-width: 0;
+}
+.stock-item-top h4 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .stock-item-top select { 
     min-height: auto; 
+    width: 6rem;
+    max-width: 40%;
+    min-width: 0;
+    flex: 0 1 6rem;
     color: var(--accent); 
     font-size: 0.8rem; 
     font-weight: 700; 
