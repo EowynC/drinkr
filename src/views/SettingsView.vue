@@ -56,6 +56,22 @@
                 <button type="button" class="export-button" @click="exportIndexedDB">
                     Export database
                 </button>
+
+                <section class="security-settings">
+                    <h2>Change admin PIN</h2>
+                    <form class="pin-form" @submit.prevent="updateAdminPin">
+                        <label for="current-admin-pin">Current PIN</label>
+                        <input id="current-admin-pin" v-model="currentAdminPin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" minlength="6" maxlength="12" required>
+                        <label for="new-admin-pin">New PIN</label>
+                        <input id="new-admin-pin" v-model="newAdminPin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" minlength="6" maxlength="12" required>
+                        <label for="confirm-admin-pin">Confirm new PIN</label>
+                        <input id="confirm-admin-pin" v-model="confirmAdminPin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" minlength="6" maxlength="12" required>
+                        <p v-if="pinError" class="pin-error" role="alert">{{ pinError }}</p>
+                        <button class="primary-button" type="submit" :disabled="isChangingPin">
+                            {{ isChangingPin ? 'Updating...' : 'Update admin PIN' }}
+                        </button>
+                    </form>
+                </section>
             </div>
         </div>
     </MainLayout>
@@ -66,6 +82,7 @@ import { ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import { exportDB } from 'dexie-export-import'
 import MainLayout from '../components/layout/MainLayout.vue'
+import { changeAdminPin } from '../auth'
 import { db } from '../database/database'
 import { DEFAULT_SETTINGS, type AppSettings, useAppSettings } from '../settings'
 
@@ -73,6 +90,11 @@ const toast = useToast({ position: 'top-right' })
 const { settings, saveSettings } = useAppSettings()
 const draft = ref<AppSettings>(cloneSettings(settings.value))
 const isEditingSnipPrice = ref(false)
+const currentAdminPin = ref('')
+const newAdminPin = ref('')
+const confirmAdminPin = ref('')
+const pinError = ref('')
+const isChangingPin = ref(false)
 
 watch(settings, () => {
     draft.value = cloneSettings(settings.value)
@@ -117,6 +139,32 @@ function resetToDefaults() {
     draft.value = cloneSettings(DEFAULT_SETTINGS)
     isEditingSnipPrice.value = false
     toast.success('Settings reset to defaults.')
+}
+
+async function updateAdminPin() {
+    pinError.value = ''
+    if (newAdminPin.value !== confirmAdminPin.value) {
+        pinError.value = 'New PINs do not match.'
+        return
+    }
+
+    isChangingPin.value = true
+    try {
+        const changed = await changeAdminPin(currentAdminPin.value, newAdminPin.value)
+        if (!changed) {
+            pinError.value = 'Current PIN is incorrect.'
+            return
+        }
+
+        currentAdminPin.value = ''
+        newAdminPin.value = ''
+        confirmAdminPin.value = ''
+        toast.success('Admin PIN updated.')
+    } catch (error) {
+        pinError.value = error instanceof Error ? error.message : 'Unable to update admin PIN.'
+    } finally {
+        isChangingPin.value = false
+    }
 }
 
 async function exportIndexedDB() {
@@ -231,6 +279,56 @@ function formatCurrency(value: number) {
         display: flex;
         gap: 0.75rem;
         margin-top: 1rem;
+    }
+
+    .security-settings {
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .security-settings h2 {
+        margin: 0 0 1rem;
+        color: var(--text-h);
+        font-size: 1.2rem;
+    }
+
+    .pin-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+
+    .pin-form label {
+        color: var(--text-h);
+        font-weight: 600;
+    }
+
+    .pin-form input {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 2.8rem;
+        margin-bottom: 0.45rem;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg);
+        color: var(--text-h);
+        font: inherit;
+    }
+
+    .pin-form .primary-button {
+        flex: initial;
+    }
+
+    .pin-form .primary-button:disabled {
+        opacity: 0.65;
+        cursor: wait;
+    }
+
+    .pin-error {
+        margin: 0;
+        color: var(--negative-feedback);
     }
 
     .primary-button,
