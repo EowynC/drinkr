@@ -37,12 +37,20 @@ export interface RecipeIngredient {
     quantity: number
 }
 
+export interface AdminCredential {
+    id: 'admin'
+    salt: string
+    verifier: string
+    iterations: number
+}
+
 const db = new Dexie('BartendrDatabase') as Dexie & {
     recipes: EntityTable<Recipe, 'id'>
     categories: EntityTable<Category, 'id'>
     sales: EntityTable<Sale, 'id'>
     inventoryItems: EntityTable<InventoryItem, 'id'>
     recipeIngredients: EntityTable<RecipeIngredient, 'id'>
+    adminCredentials: EntityTable<AdminCredential, 'id'>
 }
 
 db.version(1).stores({
@@ -55,6 +63,10 @@ db.version(1).stores({
 
 db.version(2).stores({
     sales: '++id, recipeId, quantity, timestamp, saleGroupId'
+})
+
+db.version(3).stores({
+    adminCredentials: 'id'
 })
 
 export async function recordSales(items: Array<{ recipeId: number; quantity: number }>) {

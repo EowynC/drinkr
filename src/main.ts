@@ -6,9 +6,11 @@ import './style.css'
 import App from './App.vue'
 import router from './router.ts'
 import { seedDatabase } from './database/seed.ts'
+import { initializeAdminAuth } from './auth'
 
 async function startApp() {
     await seedDatabase()
+    await initializeAdminAuth()
 
     const app = createApp(App)
 

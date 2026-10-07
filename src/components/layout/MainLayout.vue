@@ -1,11 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { isAdminConfigured, isAdminUnlocked, lockAdmin } from '../../auth'
 
 const isMenuOpen = ref(false)
+const router = useRouter()
 
 function closeMenu() {
     isMenuOpen.value = false
 }
+
+function lockAndReturnToBar() {
+    lockAdmin()
+    closeMenu()
+    void router.push('/bar')
+}
+
+function returnToBarAfterIdle() {
+    closeMenu()
+    void router.replace('/bar')
+}
+
+onMounted(() => window.addEventListener('admin-idle-lock', returnToBarAfterIdle))
+onBeforeUnmount(() => window.removeEventListener('admin-idle-lock', returnToBarAfterIdle))
 </script>
 
 <template>
@@ -26,10 +43,16 @@ function closeMenu() {
             </button>
             <nav id="app-navigation" class="app-nav" :class="{ 'menu-open': isMenuOpen }">
                 <RouterLink class="nav-link" active-class="active-link" to="/bar" @click="closeMenu">Bar</RouterLink>
-                <RouterLink class="nav-link" active-class="active-link" to="/inventory" @click="closeMenu">Inventory</RouterLink>
-                <RouterLink class="nav-link" active-class="active-link" to="/recipe" @click="closeMenu">Recipes</RouterLink>
-                <RouterLink class="nav-link" active-class="active-link" to="/sales" @click="closeMenu">Sales</RouterLink>
-                <RouterLink class="nav-link" active-class="active-link" to="/settings" @click="closeMenu">Settings</RouterLink>
+                <template v-if="isAdminUnlocked">
+                    <RouterLink class="nav-link" active-class="active-link" to="/inventory" @click="closeMenu">Inventory</RouterLink>
+                    <RouterLink class="nav-link" active-class="active-link" to="/recipe" @click="closeMenu">Recipes</RouterLink>
+                    <RouterLink class="nav-link" active-class="active-link" to="/sales" @click="closeMenu">Sales</RouterLink>
+                    <RouterLink class="nav-link" active-class="active-link" to="/settings" @click="closeMenu">Settings</RouterLink>
+                    <button class="nav-action" type="button" @click="lockAndReturnToBar">Lock admin</button>
+                </template>
+                <RouterLink v-else class="nav-link" active-class="active-link" to="/admin" @click="closeMenu">
+                    {{ isAdminConfigured ? 'Admin login' : 'Set up admin' }}
+                </RouterLink>
             </nav>
         </header>
 
@@ -78,6 +101,20 @@ function closeMenu() {
         font-weight: 500;
     }
     .nav-link:hover {
+        text-decoration: underline;
+    }
+
+    .nav-action {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: white;
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .nav-action:hover {
         text-decoration: underline;
     }
 
@@ -136,6 +173,11 @@ function closeMenu() {
 
         .nav-link {
             padding: 0.65rem 0;
+        }
+
+        .nav-action {
+            padding: 0.65rem 0;
+            text-align: left;
         }
     }
 </style>
