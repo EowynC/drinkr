@@ -17,6 +17,7 @@
                             <div class="recipe-title-copy">
                                 <h4>{{ recipe.recipe.name }}</h4>
                                 <p>{{ recipe.lines.length }} ingredient{{ recipe.lines.length === 1 ? '' : 's' }} per sale</p>
+                                <p class="recipe-price">{{ formatPrice(recipe.recipe.price) }}</p>
                             </div>
                             <button type="button" class="edit-button" @click="openRecipeWizardForItem(recipe.recipe.id)">Edit</button>
                         </div>
@@ -37,6 +38,8 @@
             :recipes="recipes"
             :categories="categories"
             :inventory-items="inventoryItems"
+            :show-snip-pricing="settings.features.showSnipPricing"
+            :snip-base-price="settings.pricing.snipBasePrice"
             @close="closeRecipeWizard"
             @recipe-change="onMenuItemChange"
             @save="saveRecipe"
@@ -50,8 +53,10 @@ import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
 import RecipeWizardModal, { type RecipeWizardState } from '../components/RecipeWizardModal.vue'
 import { db, type Category, type InventoryItem, type Recipe, type RecipeIngredient } from '../database/database'
+import { calculateSnipCount, useAppSettings } from '../settings'
 
 const toast = useToast({ position: 'top-right' })
+const { settings } = useAppSettings()
 const inventoryItems = ref<InventoryItem[]>([])
 const recipes = ref<Recipe[]>([])
 const categories = ref<Category[]>([])
@@ -119,6 +124,7 @@ function onMenuItemChange(recipeId: number | '' = wizard.recipeId) {
     wizard.ingredientRows = rows.length > 0 ? rows : [{ inventoryItemId: '', quantity: null }]
     if (selected) {
         wizard.recipeName = selected.name
+        wizard.price = selected.price
     }
 }
 
@@ -144,7 +150,10 @@ async function saveRecipe(payload: RecipeWizardState) {
         if (wizard.mode === 'existing' && wizard.recipeId !== '') {
             const recipeId = Number(wizard.recipeId)
             await db.transaction('rw', db.recipes, db.recipeIngredients, async () => {
-                await db.recipes.update(recipeId, { name: wizard.recipeName.trim() })
+                await db.recipes.update(recipeId, {
+                    name: wizard.recipeName.trim(),
+                    price: Number(wizard.price)
+                })
                 await db.recipeIngredients.where('recipeId').equals(recipeId).delete()
                 for (const row of validIngredients) {
                     await db.recipeIngredients.add({ recipeId, inventoryItemId: Number(row.inventoryItemId), quantity: Number(row.quantity) })
@@ -177,6 +186,18 @@ async function saveRecipe(payload: RecipeWizardState) {
 
 function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
     return `${Number.isInteger(quantity) ? quantity : quantity.toFixed(2)} ${unit}`
+}
+
+function formatPrice(value: number) {
+    if (settings.value.features.showSnipPricing) {
+        const snips = calculateSnipCount(value, settings.value.pricing.snipBasePrice)
+        return `${snips} ${snips === 1 ? 'snip' : 'snips'}`
+    }
+
+    return new Intl.NumberFormat('en-IE', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(value)
 }
 </script>
 

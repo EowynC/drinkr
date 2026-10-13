@@ -19,6 +19,17 @@
                 </select>
                 <label class="field-label" for="existing-recipe-name">Recipe name</label>
                 <input id="existing-recipe-name" v-model.trim="draft.recipeName" type="text" aria-label="Recipe name" required>
+                <label class="field-label" for="existing-recipe-price">{{ priceLabel }}</label>
+                <input
+                    id="existing-recipe-price"
+                    v-model.number="displayPrice"
+                    type="number"
+                    min="0"
+                    :step="showSnipPricing ? 'any' : 0.01"
+                    :aria-label="priceLabel"
+                    :placeholder="pricePlaceholder"
+                    required
+                >
             </div>
 
             <div v-else class="product-form-grid">
@@ -34,8 +45,17 @@
                     </select>
                 </div>
                 <div class="field-group">
-                    <label class="field-label" for="new-product-price">Price</label>
-                    <input id="new-recipe-price" v-model.number="draft.price" type="number" min="0" step="0.01" aria-label="Menu item price" placeholder="Price" required>
+                    <label class="field-label" for="new-recipe-price">{{ priceLabel }}</label>
+                    <input
+                        id="new-recipe-price"
+                        v-model.number="displayPrice"
+                        type="number"
+                        min="0"
+                        :step="showSnipPricing ? 1 : 0.01"
+                        :aria-label="priceLabel"
+                        :placeholder="pricePlaceholder"
+                        required
+                    >
                 </div>
             </div>
 
@@ -66,6 +86,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import type { Category, InventoryItem, Recipe } from '../database/database'
+import { DEFAULT_SETTINGS } from '../settings'
 
 export type WizardMode = 'existing' | 'new'
 
@@ -84,6 +105,8 @@ const props = defineProps<{
     recipes: Recipe[]
     categories: Category[]
     inventoryItems: InventoryItem[]
+    showSnipPricing: boolean
+    snipBasePrice: number
 }>()
 
 const emit = defineEmits<{
@@ -94,12 +117,30 @@ const emit = defineEmits<{
 
 const draft = reactive<RecipeWizardState>(cloneWizard(props.modelValue))
 
+const safeSnipBasePrice = computed(() => Number.isFinite(props.snipBasePrice) && props.snipBasePrice > 0
+    ? props.snipBasePrice
+    : DEFAULT_SETTINGS.pricing.snipBasePrice)
+const priceLabel = computed(() => props.showSnipPricing ? 'Price (snips)' : 'Price (EUR)')
+const pricePlaceholder = computed(() => props.showSnipPricing ? 'Price in snips' : 'Price in EUR')
+const displayPrice = computed({
+    get: () => props.showSnipPricing && draft.price !== null
+        ? draft.price / safeSnipBasePrice.value
+        : draft.price,
+    set: (value: number | null) => {
+        draft.price = value === null
+            ? null
+            : props.showSnipPricing
+                ? value * safeSnipBasePrice.value
+                : value
+    }
+})
+
 const canSave = computed(() => {
     const hasIngredients = draft.ingredientRows.some(row => row.inventoryItemId !== '' && row.quantity !== null && row.quantity > 0)
     if (!hasIngredients) return false
 
     if (draft.mode === 'existing') {
-        return draft.recipeId !== '' && !!draft.recipeName.trim()
+        return draft.recipeId !== '' && !!draft.recipeName.trim() && draft.price !== null && draft.price >= 0
     }
 
     return !!draft.recipeName.trim() && draft.categoryId !== '' && draft.price !== null && draft.price >= 0
