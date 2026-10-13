@@ -19,18 +19,13 @@
     .bar-item-cost {
         font-size: 0.8rem;
     }
-
-    .bar-item-snips {
-        font-size: 0.72rem;
-        opacity: 0.85;
-    }
 </style>
 
 <template>
     <button class="bar-item-button" @click="emit('sold')">
         <span>{{ name }}</span>
-        <span class="bar-item-cost">{{ formatCurrency(cost) }}</span>
-        <span v-if="showSnipPricing" class="bar-item-snips">{{ snipLabel }}</span>
+        <span v-if="showSnipPricing" class="bar-item-cost">{{ snipLabel }}</span>
+        <span v-if="!showSnipPricing" class="bar-item-cost">{{ formatCurrency(cost) }}</span>
     </button>
 </template>
 
