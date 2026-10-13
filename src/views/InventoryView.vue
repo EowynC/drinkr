@@ -5,74 +5,44 @@
                 <div><p class="eyebrow">Back of house</p><h2>Inventory</h2></div>
                 <p class="inventory-note">Stock is deducted when a sale is confirmed.</p>
             </header>
-<!-- 
-            <section class="inventory-section product-section">
-                <div class="section-heading">
-                    <div><p class="eyebrow">What the customer can order</p><h3>Bar products</h3></div>
-                    <form class="product-form" @submit.prevent="addProduct">
-                        <input v-model.trim="productForm.name" type="text" aria-label="Product name" placeholder="Drink name" required>
-                        <select v-model="productForm.categoryId" aria-label="Product category" required>
-                            <option disabled value="">Choose category</option>
-                            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-                        </select>
-                        <input v-model.number="productForm.price" type="number" min="0" step="0.01" aria-label="Product price" placeholder="Price" required>
-                        <button type="submit">Add product</button>
-                    </form>
-                </div>
-                <p class="product-list">{{ products.length }} products currently available in the bar:</p>
-                <p class="product-list">
-                    <span v-for="value in products">{{ value.name }}, </span>
-                </p>
-            </section> -->
-
             <section class="inventory-section">
                 <div class="section-heading">
                     <div><p class="eyebrow">Ingredients and packaged stock</p><h3>On hand</h3></div>
-                    <form class="stock-form" @submit.prevent="addStock">
-                        <select v-model="stockForm.itemId" aria-label="Ingredient to restock" required>
-                            <option disabled value="">Choose stock item</option>
-                            <option v-for="item in inventoryItems" :key="item.id" :value="item.id">{{ item.name }}</option>
-                        </select>
-                        <input v-model.number="stockForm.amount" type="number" min="0.01" step="any" aria-label="Amount to add" placeholder="Amount" required>
-                        <button type="submit">Add stock</button>
-                    </form>
+                    <button type="button" class="add-item-button" @click="openNewItem">Add item</button>
                 </div>
-                <form class="new-item-form" @submit.prevent="addInventoryItem">
-                    <input v-model.trim="newItemForm.name" type="text" aria-label="New stock item name" placeholder="New stock item" required>
-                    <select v-model="newItemForm.unit" aria-label="New stock item unit">
-                        <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
-                    </select>
-                    <input v-model.number="newItemForm.quantity" type="number" min="0" step="any" aria-label="Opening stock quantity" placeholder="Opening quantity" required>
-                    <button type="submit">Add item</button>
-                </form>
                 <div class="stock-grid">
                     <article v-for="item in inventoryItems" :key="item.id" class="stock-item">
                         <div class="stock-item-top">
                             <h4>{{ item.name }}</h4>
-                            <select :value="item.unit" :aria-label="`Unit for ${item.name}`" @change="changeUnit(item, $event)">
-                                <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
-                            </select>
+                            <button type="button" class="edit-button" :aria-label="`Edit ${item.name}`" @click="openEditItem(item)">Edit</button>
                         </div>
                         <strong>{{ formatQuantity(item.quantity, item.unit) }}</strong>
                         <p>{{ item.unit === 'ml' ? `${(item.quantity / 1000).toFixed(2)} L total` : 'Available to use' }}</p>
                     </article>
                 </div>
+                <p v-if="inventoryItems.length === 0" class="empty-state">No stock items yet. Add an item to get started.</p>
             </section>
         </div>
+        <InventoryItemModal
+            :visible="showItemModal"
+            :item="selectedItem"
+            @close="closeItemModal"
+            @save="saveInventoryItem"
+        />
     </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import MainLayout from '../components/layout/MainLayout.vue'
-import { db, type InventoryItem, type InventoryUnit } from '../database/database'
+import InventoryItemModal, { type InventoryItemDraft } from '../components/InventoryItemModal.vue'
+import { db, type InventoryItem } from '../database/database'
 
 const toast = useToast({ position: 'top-right' })
 const inventoryItems = ref<InventoryItem[]>([])
-const stockForm = reactive<{ itemId: number | ''; amount: number | null }>({ itemId: '', amount: null })
-const newItemForm = reactive<{ name: string; unit: InventoryUnit; quantity: number | null }>({ name: '', unit: 'ml', quantity: null })
-const units: InventoryUnit[] = ['ml', 'bottle', 'gr', 'portion']
+const selectedItem = ref<InventoryItem | null>(null)
+const showItemModal = ref(false)
 
 onMounted(loadInventory)
 
@@ -80,63 +50,56 @@ async function loadInventory() {
     inventoryItems.value = await db.inventoryItems.toArray()
 }
 
-async function addStock() {
-    if (stockForm.itemId === '' || !stockForm.amount || stockForm.amount <= 0) {
-        toast.warning('Choose a stock item and a valid amount.')
-        return
-    }
-
-    const item = inventoryItems.value.find(value => value.id === stockForm.itemId)
-    if (!item) {
-        toast.error('Could not find that stock item.')
-        return
-    }
-
-    try {
-        await db.inventoryItems.update(item.id, { quantity: item.quantity + stockForm.amount })
-        stockForm.amount = null
-        await loadInventory()
-        toast.success(`${item.name} stock updated.`)
-    } catch (error) {
-        console.error('Unable to add stock', error)
-        toast.error('Unable to update stock.')
-    }
+function openNewItem() {
+    selectedItem.value = null
+    showItemModal.value = true
 }
 
-async function addInventoryItem() {
-    if (!newItemForm.name || newItemForm.quantity === null || newItemForm.quantity < 0) {
-        toast.warning('Enter a valid stock item name and quantity.')
-        return
-    }
-
-    const itemName = newItemForm.name
-
-    try {
-        await db.inventoryItems.add({ id: Date.now(), name: itemName, unit: newItemForm.unit, quantity: newItemForm.quantity })
-        newItemForm.name = ''
-        newItemForm.quantity = null
-        await loadInventory()
-        toast.success(`${itemName} added to inventory.`)
-    } catch (error) {
-        console.error('Unable to add inventory item', error)
-        toast.error('Unable to add stock item.')
-    }
+function openEditItem(item: InventoryItem) {
+    selectedItem.value = item
+    showItemModal.value = true
 }
 
-async function changeUnit(item: InventoryItem, event: Event) {
-    const unit = (event.target as HTMLSelectElement).value as InventoryUnit
-    if (!units.includes(unit)) {
-        toast.warning('That unit is not available.')
+function closeItemModal() {
+    showItemModal.value = false
+    selectedItem.value = null
+}
+
+async function saveInventoryItem(draft: InventoryItemDraft) {
+    const name = draft.name.trim()
+    const stockToAdd = draft.stockToAdd === null || draft.stockToAdd === '' ? 0 : draft.stockToAdd
+    if (!name || !Number.isFinite(stockToAdd) || stockToAdd < 0) {
+        toast.warning('Enter a valid item name and stock quantity.')
         return
     }
 
     try {
-        await db.inventoryItems.update(item.id, { unit })
-        item.unit = unit
-        toast.success(`${item.name} unit updated.`)
+        if (selectedItem.value) {
+            const item = selectedItem.value
+            await db.transaction('rw', db.inventoryItems, async () => {
+                const currentItem = await db.inventoryItems.get(item.id)
+                if (!currentItem) throw new Error(`Inventory item ${item.id} no longer exists`)
+                await db.inventoryItems.update(item.id, {
+                    name,
+                    unit: draft.unit,
+                    quantity: currentItem.quantity + stockToAdd
+                })
+            })
+            toast.success(`${name} updated.`)
+        } else {
+            await db.inventoryItems.add({
+                id: Date.now(),
+                name,
+                unit: draft.unit,
+                quantity: stockToAdd
+            })
+            toast.success(`${name} added to inventory.`)
+        }
+        await loadInventory()
+        closeItemModal()
     } catch (error) {
-        console.error('Unable to update unit', error)
-        toast.error('Unable to update stock unit.')
+        console.error('Unable to save inventory item', error)
+        toast.error(selectedItem.value ? 'Unable to save stock item.' : 'Unable to add stock item.')
     }
 }
 
@@ -146,94 +109,75 @@ function formatQuantity(quantity: number, unit: InventoryItem['unit']) {
 </script>
 
 <style>
-.inventory-screen { 
-    width: 100%; 
-    max-width: 1100px; 
-    margin: 0 auto; 
-    padding: 2rem; 
-    box-sizing: border-box; 
-    text-align: left; 
+.inventory-screen {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+    box-sizing: border-box;
+    text-align: left;
 }
-.inventory-header, .section-heading, .stock-item-top { 
-    display: flex; 
-    align-items: center; 
+.inventory-header, .section-heading, .stock-item-top {
+    display: flex;
+    align-items: center;
 }
-.inventory-header, .section-heading { 
-    justify-content: space-between; 
-    gap: 1rem; 
+.inventory-header, .section-heading {
+    justify-content: space-between;
+    gap: 1rem;
 }
-.inventory-header { 
-    margin-bottom: 2.5rem; 
+.inventory-header {
+    margin-bottom: 2.5rem;
 }
-.inventory-header h2, .section-heading h3, .stock-item h4 { 
-    margin: 0; 
-    color: var(--text-h); 
+.inventory-header h2, .section-heading h3, .stock-item h4 {
+    margin: 0;
+    color: var(--text-h);
 }
-.section-heading h3 { 
-    font-size: 1.5rem; 
+.section-heading h3 {
+    font-size: 1.5rem;
 }
-.eyebrow { 
-    margin: 0 0 0.2rem; 
-    color: var(--accent); 
-    font-size: 0.75rem; 
-    font-weight: 700; 
-    letter-spacing: 0.08em; 
-    text-transform: uppercase; 
+.eyebrow {
+    margin: 0 0 0.2rem;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
-.inventory-note, .stock-item p {
-     color: var(--text); 
-     font-size: 0.85rem; 
+.inventory-note, .stock-item p, .empty-state {
+    color: var(--text);
+    font-size: 0.85rem;
 }
-.inventory-section { 
-    margin-bottom: 3rem; 
+.inventory-section {
+    margin-bottom: 3rem;
 }
-.stock-form, .new-item-form, .product-form { 
-    display: flex; 
-    flex-wrap: wrap; 
-    gap: 0.5rem; 
-    justify-content: flex-end; 
+.add-item-button, .edit-button {
+    min-height: 2.6rem;
+    box-sizing: border-box;
+    padding: 0.45rem 0.8rem;
+    color: var(--text-button);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
 }
-.new-item-form { 
-    margin-top: 0.75rem; 
+.stock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.8rem;
+    margin-top: 1rem;
 }
-.product-list { 
-    margin-top: 1rem; 
-    color: var(--text); 
-    font-size: 0.85rem; 
-}
-select, input, button { 
-    min-height: 2.6rem; 
-    box-sizing: border-box; 
-    border: 1px solid var(--border); 
-    border-radius: 5px; 
-    padding: 0.45rem 0.65rem; 
-    font: inherit; 
-}
-select, input { 
-    color: var(--text-h); 
-    background: var(--bg); 
-}
-button { 
-    color: var(--text-button); 
-    background: var(--accent); 
-    border-color: var(--accent); 
-    cursor: pointer; 
-    font-weight: 600; 
-}
-.stock-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); 
-    gap: 0.8rem; margin-top: 1rem; 
-}
-.stock-item { 
-    border: 1px solid var(--border); 
-    border-radius: 6px; padding: 1rem; 
-    background: var(--code-bg); 
-}
-.stock-item-top { 
-    justify-content: space-between; 
-    gap: 0.5rem; 
+.stock-item {
     min-width: 0;
+    padding: 1rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+.stock-item-top {
+    justify-content: space-between;
+    gap: 0.5rem;
 }
 .stock-item-top h4 {
     min-width: 0;
@@ -241,40 +185,36 @@ button {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.stock-item-top select { 
-    min-height: auto; 
-    width: 6rem;
-    max-width: 40%;
-    min-width: 0;
-    flex: 0 1 6rem;
-    color: var(--accent); 
-    font-size: 0.8rem; 
-    font-weight: 700; 
+.edit-button {
+    min-height: 2rem;
+    flex: 0 0 auto;
+    padding: 0.25rem 0.6rem;
+    color: var(--accent);
+    background: transparent;
 }
-.stock-item strong { 
-    display: block; 
-    margin-top: 1.2rem; 
-    color: var(--text-h); 
-    font-size: 1.5rem; 
+.stock-item strong {
+    display: block;
+    margin-top: 1.2rem;
+    color: var(--text-h);
+    font-size: 1.5rem;
 }
-.stock-item p { 
-    margin: 0.2rem 0 0; 
+.stock-item p {
+    margin: 0.2rem 0 0;
 }
-@media (max-width: 700px) { 
-    .inventory-screen { 
-        padding: 1rem; 
-    } 
-    .inventory-header, .section-heading { 
-        align-items: flex-start; 
-        flex-direction: column; 
-    } 
-    .stock-form, .new-item-form, .product-form { 
-        width: 100%; 
-        justify-content: stretch; 
-    } 
-    .stock-form > *, .new-item-form > *, .product-form > * { 
-        flex: 1 1 130px; 
-        min-width: 0; 
-    } 
+.empty-state {
+    margin-top: 1.5rem;
+}
+.add-item-button:focus-visible, .edit-button:focus-visible {
+    outline: 3px solid var(--accent-border);
+    outline-offset: 2px;
+}
+@media (max-width: 700px) {
+    .inventory-screen {
+        padding: 1rem;
+    }
+    .inventory-header, .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }
 </style>
