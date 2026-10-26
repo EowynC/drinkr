@@ -4,6 +4,7 @@ export async function seedDatabase() {
     const recipeCount = await db.recipes.count()
     const categoryCount = await db.categories.count()
     const inventoryCount = await db.inventoryItems.count()
+    const recipeIngredientCount = await db.recipeIngredients.count()
 
     if (categoryCount === 0) await db.categories.bulkPut([
         {
@@ -39,108 +40,36 @@ export async function seedDatabase() {
     ])
 
     if (recipeCount === 0) await db.recipes.bulkPut([
-        {
-            id: 1,
-            name: 'Coke',
-            categoryId: 1,
-            price: 3.00
-        },
-        {
-            id: 3,
-            name: 'Gin',
-            categoryId: 5,
-            price: 6.00
-        },
-        {
-            id: 4,
-            name: 'Tonic',
-            categoryId: 1,
-            price: 3.00
-        },
-        {
-            id: 5,
-            name: 'Gin & Tonic',
-            categoryId: 6,
-            price: 6.00
-        },
-        {
-            id: 6,
-            name: 'Jupiler',
-            categoryId: 2,
-            price: 3.00
-        },
-        {
-            id: 7,
-            name: 'La Chouffe',
-            categoryId: 2,
-            price: 6.00
-        },
-        {
-            id: 9,
-            name: 'Negroni',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 10,
-            name: 'Boulevardier',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 11,
-            name: 'Bapu Bapu',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 12,
-            name: 'Cosmopolitan',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 13,
-            name: 'Yiff on the Beach',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 14,
-            name: 'Moscow Mule',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 15,
-            name: 'Dark n Stormy',
-            categoryId: 3,
-            price: 12.00
-        },
-        {
-            id: 16,
-            name: 'Vodka Orange',
-            categoryId: 6,
-            price: 6.00
-        },
-        {
-            id: 17,
-            name: 'Rum Cola',
-            categoryId: 6,
-            price: 6.00
-        },
-        {
-            id: 18,
-            name: 'Whiskey Cola',
-            categoryId: 6,
-            price: 6.00
-        },
-        {
-            id: 19,
-            name: 'Vodka Red Bull',
-            categoryId: 6,
-            price: 6.00
-        },
+        { id: 1, name: 'Cola', categoryId: 1, price: 1.50 },
+        { id: 2, name: 'Cola Zero', categoryId: 1, price: 1.50 },
+        { id: 3, name: 'Fanta', categoryId: 1, price: 1.50 },
+        { id: 4, name: 'Sprite', categoryId: 1, price: 1.50 },
+        { id: 5, name: 'Lipton Ice Tea', categoryId: 1, price: 1.50 },
+        { id: 6, name: 'Red Bull', categoryId: 1, price: 3.00 },
+        { id: 7, name: 'Tonic', categoryId: 1, price: 1.50 },
+        { id: 8, name: 'Blue Aquarius', categoryId: 1, price: 3.00 },
+        { id: 9, name: 'Stella', categoryId: 2, price: 3.00 },
+        { id: 10, name: 'Kriek', categoryId: 2, price: 3.00 },
+        { id: 11, name: 'Duvel', categoryId: 2, price: 4.50 },
+        { id: 12, name: 'Leffe Blond', categoryId: 2, price: 4.50 },
+        { id: 13, name: 'Leffe Brown', categoryId: 2, price: 4.50 },
+        { id: 14, name: 'Rochefort 10', categoryId: 2, price: 4.50 },
+        { id: 15, name: 'Chimay Blue', categoryId: 2, price: 4.50 },
+        { id: 16, name: 'Smoutpot', categoryId: 2, price: 4.50 },
+        { id: 17, name: 'Cava', categoryId: 2, price: 4.50 },
+        { id: 18, name: 'Negroni', categoryId: 3, price: 9.00 },
+        { id: 19, name: 'Boulevardier', categoryId: 3, price: 9.00 },
+        { id: 20, name: 'Bapu Bapu', categoryId: 3, price: 9.00 },
+        { id: 21, name: 'Cosmopolitan', categoryId: 3, price: 7.50 },
+        { id: 22, name: 'Yiff on the Beach', categoryId: 3, price: 7.50 },
+        { id: 23, name: 'Moscow Mule', categoryId: 6, price: 9.00 },
+        { id: 24, name: 'Dark n Stormy', categoryId: 6, price: 9.00 },
+        { id: 25, name: 'Gin & Tonic', categoryId: 6, price: 7.50 },
+        { id: 26, name: 'Vodka Orange', categoryId: 6, price: 7.50 },
+        { id: 27, name: 'Rum Cola', categoryId: 6, price: 7.50 },
+        { id: 28, name: 'Whiskey Cola', categoryId: 6, price: 7.50 },
+        { id: 29, name: 'Vodka Red Bull', categoryId: 6, price: 9.00 },
+        { id: 30, name: 'Virgin Pisang Orange', categoryId: 4, price: 4.50 }
     ])
 
     if (inventoryCount === 0) {
@@ -168,7 +97,7 @@ export async function seedDatabase() {
             { id: 21, name: 'Sprite', unit: 'ml', quantity: 36000 },
             { id: 22, name: 'Fanta', unit: 'ml', quantity: 24000 },
             { id: 23, name: 'Lipton Ice Tea', unit: 'ml', quantity: 12000 },
-            { id: 24, name: 'Blue Aquarius', unit: 'ml', quantity: 24000 },
+            { id: 24, name: 'Blue Aquarius', unit: 'bottle', quantity: 24 },
             { id: 25, name: 'Ginger beer', unit: 'ml', quantity: 120000 },
             { id: 26, name: 'Red Bull', unit: 'bottle', quantity: 72 },
             { id: 27, name: 'Vanilla syrup', unit: 'ml', quantity: 12000 },
@@ -184,53 +113,69 @@ export async function seedDatabase() {
             { id: 37, name: 'Stella', unit: 'bottle', quantity: 360 }
         ])
 
-        await db.recipeIngredients.bulkPut([
-            { id: 1, recipeId: 1, inventoryItemId: 1, quantity: 250 },
-            { id: 2, recipeId: 5, inventoryItemId: 2, quantity: 60 },
-            { id: 3, recipeId: 5, inventoryItemId: 3, quantity: 150 },
-            { id: 4, recipeId: 3, inventoryItemId: 2, quantity: 60 },
-            { id: 5, recipeId: 4, inventoryItemId: 3, quantity: 1 },
-            { id: 6, recipeId: 6, inventoryItemId: 23, quantity: 1 },
-            { id: 7, recipeId: 7, inventoryItemId: 24, quantity: 1 },
-            { id: 8, recipeId: 9, inventoryItemId: 5, quantity: 30 },
-            { id: 9, recipeId: 9, inventoryItemId: 2, quantity: 30 },
-            { id: 10, recipeId: 9, inventoryItemId: 6, quantity: 30 },
-            { id: 11, recipeId: 10, inventoryItemId: 5, quantity: 30 },
-            { id: 12, recipeId: 10, inventoryItemId: 7, quantity: 30 },
-            { id: 13, recipeId: 10, inventoryItemId: 6, quantity: 30 },
-            { id: 14, recipeId: 11, inventoryItemId: 8, quantity: 30 },
-            { id: 15, recipeId: 11, inventoryItemId: 9, quantity: 30 },
-            { id: 16, recipeId: 11, inventoryItemId: 10, quantity: 20 },
-            { id: 17, recipeId: 11, inventoryItemId: 11, quantity: 20 },
-            { id: 18, recipeId: 11, inventoryItemId: 22, quantity: 30 },
-            { id: 19, recipeId: 11, inventoryItemId: 12, quantity: 60 },
-            { id: 20, recipeId: 12, inventoryItemId: 13, quantity: 40 },
-            { id: 21, recipeId: 12, inventoryItemId: 14, quantity: 20 },
-            { id: 22, recipeId: 12, inventoryItemId: 15, quantity: 30 },
-            { id: 23, recipeId: 12, inventoryItemId: 22, quantity: 15 },
-            { id: 24, recipeId: 13, inventoryItemId: 13, quantity: 45 },
-            { id: 25, recipeId: 13, inventoryItemId: 16, quantity: 15 },
-            { id: 26, recipeId: 13, inventoryItemId: 15, quantity: 30 },
-            { id: 27, recipeId: 13, inventoryItemId: 17, quantity: 30 },
-            { id: 28, recipeId: 13, inventoryItemId: 12, quantity: 30 },
-            { id: 29, recipeId: 13, inventoryItemId: 18, quantity: 15 },
-            { id: 30, recipeId: 14, inventoryItemId: 13, quantity: 60 },
-            { id: 31, recipeId: 14, inventoryItemId: 22, quantity: 15 },
-            { id: 32, recipeId: 14, inventoryItemId: 19, quantity: 10 },
-            { id: 33, recipeId: 14, inventoryItemId: 20, quantity: 150 },
-            { id: 34, recipeId: 15, inventoryItemId: 9, quantity: 60 },
-            { id: 35, recipeId: 15, inventoryItemId: 22, quantity: 15 },
-            { id: 36, recipeId: 15, inventoryItemId: 19, quantity: 10 },
-            { id: 37, recipeId: 15, inventoryItemId: 20, quantity: 150 },
-            { id: 38, recipeId: 16, inventoryItemId: 13, quantity: 60 },
-            { id: 39, recipeId: 16, inventoryItemId: 12, quantity: 150 },
-            { id: 40, recipeId: 17, inventoryItemId: 9, quantity: 60 },
-            { id: 41, recipeId: 17, inventoryItemId: 22, quantity: 15 },
-            { id: 42, recipeId: 17, inventoryItemId: 1, quantity: 150 },
-            { id: 43, recipeId: 18, inventoryItemId: 7, quantity: 60 },
-            { id: 44, recipeId: 18, inventoryItemId: 1, quantity: 150 },
-            { id: 45, recipeId: 19, inventoryItemId: 13, quantity: 60 },
-            { id: 46, recipeId: 19, inventoryItemId: 21, quantity: 150 }
-        ])
     }
+
+    if (recipeCount === 0 && recipeIngredientCount === 0) await db.recipeIngredients.bulkPut([
+        { recipeId: 1, inventoryItemId: 19, quantity: 300 },
+        { recipeId: 2, inventoryItemId: 20, quantity: 300 },
+        { recipeId: 3, inventoryItemId: 22, quantity: 300 },
+        { recipeId: 4, inventoryItemId: 21, quantity: 300 },
+        { recipeId: 5, inventoryItemId: 23, quantity: 300 },
+        { recipeId: 6, inventoryItemId: 26, quantity: 1 },
+        { recipeId: 7, inventoryItemId: 18, quantity: 300 },
+        { recipeId: 8, inventoryItemId: 24, quantity: 1 },
+        { recipeId: 9, inventoryItemId: 37, quantity: 1 },
+        { recipeId: 10, inventoryItemId: 34, quantity: 1 },
+        { recipeId: 11, inventoryItemId: 31, quantity: 1 },
+        { recipeId: 12, inventoryItemId: 32, quantity: 1 },
+        { recipeId: 13, inventoryItemId: 33, quantity: 1 },
+        { recipeId: 14, inventoryItemId: 35, quantity: 1 },
+        { recipeId: 15, inventoryItemId: 36, quantity: 1 },
+        { recipeId: 16, inventoryItemId: 17, quantity: 80 },
+        { recipeId: 16, inventoryItemId: 31, quantity: 1 },
+        { recipeId: 17, inventoryItemId: 10, quantity: 125 },
+        { recipeId: 18, inventoryItemId: 8, quantity: 30 },
+        { recipeId: 18, inventoryItemId: 6, quantity: 30 },
+        { recipeId: 18, inventoryItemId: 7, quantity: 30 },
+        { recipeId: 19, inventoryItemId: 8, quantity: 30 },
+        { recipeId: 19, inventoryItemId: 9, quantity: 30 },
+        { recipeId: 19, inventoryItemId: 7, quantity: 30 },
+        { recipeId: 20, inventoryItemId: 2, quantity: 30 },
+        { recipeId: 20, inventoryItemId: 1, quantity: 30 },
+        { recipeId: 20, inventoryItemId: 29, quantity: 20 },
+        { recipeId: 20, inventoryItemId: 27, quantity: 20 },
+        { recipeId: 20, inventoryItemId: 16, quantity: 30 },
+        { recipeId: 20, inventoryItemId: 15, quantity: 60 },
+        { recipeId: 21, inventoryItemId: 3, quantity: 40 },
+        { recipeId: 21, inventoryItemId: 5, quantity: 20 },
+        { recipeId: 21, inventoryItemId: 13, quantity: 30 },
+        { recipeId: 21, inventoryItemId: 16, quantity: 15 },
+        { recipeId: 22, inventoryItemId: 3, quantity: 45 },
+        { recipeId: 22, inventoryItemId: 4, quantity: 15 },
+        { recipeId: 22, inventoryItemId: 13, quantity: 30 },
+        { recipeId: 22, inventoryItemId: 14, quantity: 30 },
+        { recipeId: 22, inventoryItemId: 15, quantity: 30 },
+        { recipeId: 22, inventoryItemId: 30, quantity: 15 },
+        { recipeId: 23, inventoryItemId: 3, quantity: 60 },
+        { recipeId: 23, inventoryItemId: 16, quantity: 15 },
+        { recipeId: 23, inventoryItemId: 28, quantity: 10 },
+        { recipeId: 23, inventoryItemId: 25, quantity: 150 },
+        { recipeId: 24, inventoryItemId: 1, quantity: 60 },
+        { recipeId: 24, inventoryItemId: 16, quantity: 15 },
+        { recipeId: 24, inventoryItemId: 28, quantity: 10 },
+        { recipeId: 24, inventoryItemId: 25, quantity: 150 },
+        { recipeId: 25, inventoryItemId: 6, quantity: 60 },
+        { recipeId: 25, inventoryItemId: 18, quantity: 150 },
+        { recipeId: 26, inventoryItemId: 3, quantity: 60 },
+        { recipeId: 26, inventoryItemId: 15, quantity: 150 },
+        { recipeId: 27, inventoryItemId: 1, quantity: 60 },
+        { recipeId: 27, inventoryItemId: 16, quantity: 15 },
+        { recipeId: 27, inventoryItemId: 19, quantity: 150 },
+        { recipeId: 28, inventoryItemId: 9, quantity: 60 },
+        { recipeId: 28, inventoryItemId: 19, quantity: 150 },
+        { recipeId: 29, inventoryItemId: 3, quantity: 60 },
+        { recipeId: 29, inventoryItemId: 26, quantity: 1 },
+        { recipeId: 30, inventoryItemId: 11, quantity: 60 },
+        { recipeId: 30, inventoryItemId: 15, quantity: 170 }
+    ])
 }
