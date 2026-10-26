@@ -53,9 +53,21 @@
                     </button>
                 </div>
 
-                <button type="button" class="export-button" @click="exportIndexedDB">
-                    Export database
-                </button>
+                <div class="database-actions">
+                    <button type="button" class="export-button" @click="exportIndexedDB">
+                        Export database
+                    </button>
+                    <button type="button" class="export-button" @click="selectDatabaseImport">
+                        Import database
+                    </button>
+                    <input
+                        ref="databaseImportInput"
+                        class="database-import-input"
+                        type="file"
+                        accept="application/json,.json"
+                        @change="importIndexedDB"
+                    >
+                </div>
 
                 <section class="security-settings">
                     <h2>Change admin PIN</h2>
@@ -80,7 +92,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
-import { exportDB } from 'dexie-export-import'
+import { exportDB, importInto } from 'dexie-export-import'
 import MainLayout from '../components/layout/MainLayout.vue'
 import { changeAdminPin } from '../auth'
 import { db } from '../database/database'
@@ -95,6 +107,7 @@ const newAdminPin = ref('')
 const confirmAdminPin = ref('')
 const pinError = ref('')
 const isChangingPin = ref(false)
+const databaseImportInput = ref<HTMLInputElement | null>(null)
 
 watch(settings, () => {
     draft.value = cloneSettings(settings.value)
@@ -175,14 +188,43 @@ async function exportIndexedDB() {
         const blob = await exportDB(db, { prettyJson: true })
         const url = URL.createObjectURL(blob)
         const file = document.createElement('a')
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
         file.href = url
-        file.download = 'bartendr-export.json'
+        file.download = `bartendr-export-${timestamp}.json`
         file.click()
         URL.revokeObjectURL(url)
         toast.success('Database export started.')
     } catch (error) {
         console.error('Failed to export database', error)
         toast.error('Failed to export database.')
+    }
+}
+
+function selectDatabaseImport() {
+    databaseImportInput.value?.click()
+}
+
+async function importIndexedDB(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    try {
+        const confirmed = confirm(
+            'Importing this backup will replace all data on this device, including the admin PIN. Continue?'
+        )
+        if (!confirmed) return
+
+        await importInto(db, file, {
+            clearTablesBeforeImport: true,
+            overwriteValues: true
+        })
+        toast.success('Database imported successfully.')
+    } catch (error) {
+        console.error('Failed to import database', error)
+        toast.error('Failed to import database. Make sure you selected a valid Bartendr export.')
+    } finally {
+        input.value = ''
     }
 }
 
@@ -365,9 +407,19 @@ function formatCurrency(value: number) {
 
     .export-button {
         width: 100%;
-        margin-top: 1rem;
         border: 1px solid var(--border);
         background: var(--bg);
         color: var(--text-h);
+    }
+
+    .database-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .database-import-input {
+        display: none;
     }
 </style>
